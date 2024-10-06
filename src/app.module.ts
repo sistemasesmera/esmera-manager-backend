@@ -3,10 +3,10 @@ import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CoursesModule } from './modules/courses/courses.module';
 import { ContractsModule } from './modules/contracts/contracts.module';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { getDataSourceConfig } from './config/data-source.config';
 import { AlumnModule } from './modules/alumn/alumn.module';
+import { DataSourceConfig } from './config/data-source.config';
 
 @Module({
   imports: [
@@ -14,11 +14,8 @@ import { AlumnModule } from './modules/alumn/alumn.module';
       envFilePath: '.env', // Archivo de configuración
       isGlobal: true,
     }),
-    TypeOrmModule.forRootAsync({
-      useFactory: async (configService: ConfigService) =>
-        getDataSourceConfig(configService),
-      inject: [ConfigService],
-    }),
+    TypeOrmModule.forRoot({ ...DataSourceConfig }),
+
     UsersModule,
     AuthModule,
     CoursesModule,

@@ -7,10 +7,10 @@ import {
   Column,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
-import { Alumn } from 'src/modules/alumn/entities/alumn.entity';
+import { Alumn } from '../../alumn/entities/alumn.entity';
 import { IsEnum } from 'class-validator';
-import { DocumentType } from 'src/constants/document-type.enum';
-import { Course } from 'src/modules/courses/entities/course.entity';
+import { DocumentType } from '../../../constants/document-type.enum';
+import { Course } from '../../courses/entities/course.entity';
 
 @Entity()
 export class Contract {

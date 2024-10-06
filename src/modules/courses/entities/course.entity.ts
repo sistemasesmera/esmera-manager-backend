@@ -1,4 +1,3 @@
-import { Contract } from 'src/modules/contracts/entities/contract.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -7,6 +6,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Contract } from '../../contracts/entities/contract.entity';
 
 @Entity()
 export class Course {

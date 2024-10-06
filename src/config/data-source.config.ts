@@ -1,18 +1,38 @@
-import { ConfigService } from '@nestjs/config';
-import { DataSourceOptions } from 'typeorm';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { DataSource, DataSourceOptions } from 'typeorm';
 
-export function getDataSourceConfig(
-  configService: ConfigService,
-): DataSourceOptions {
-  return {
-    type: 'postgres',
-    host: configService.get('DB_HOST') || 'db',
-    port: parseInt(configService.get('DB_PORT'), 10) || 5432,
-    username: configService.get('DB_USERNAME') || 'user',
-    password: configService.get('DB_PASSWORD') || 'secret',
-    database: configService.get('DB_NAME') || 'db-public',
-    entities: [__dirname + '/../**/*.entity{.ts,.js}'], // Apunta a tus entidades
-    synchronize: true, // ¡Cuidado con esto en producción!
-    logging: false,
-  };
-}
+// load .[current environment].env file
+ConfigModule.forRoot({
+  envFilePath: `.env`,
+});
+
+// getting config service instance with current environment values
+const configService = new ConfigService();
+
+const ConfigDB = {
+  type: configService.get('DB_CONNECTION'),
+  host: configService.get('DB_HOST'),
+  port: configService.get('DB_PORT'),
+  username: configService.get('DB_USERNAME'),
+  password: String(configService.get('DB_PASSWORD')),
+  database: configService.get('DB_NAME'),
+  synchronize: false,
+  dropSchema: false,
+  entities: [__dirname + '/../**/*.entity{.ts,.js}'],
+  migrations: [__dirname + '/../migrations/*{.ts,.js}'],
+  seeds: [__dirname + '/seeds/**/*{.ts,.js}'],
+  factories: [__dirname + '/factories/**/*{.ts,.js}'],
+  cli: {
+    migrationsDir: __dirname + '/migrations/',
+  },
+  migrationsTableName: 'migrations',
+  ssl: {
+    UnauthorizedException: false,
+  },
+};
+
+const dataSourceConfig: DataSourceOptions = ConfigDB;
+
+export const DataSourceConfig: DataSourceOptions = dataSourceConfig;
+
+export const AppDS = new DataSource(DataSourceConfig);

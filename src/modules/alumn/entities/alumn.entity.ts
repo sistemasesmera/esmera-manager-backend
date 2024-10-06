@@ -16,8 +16,8 @@ import {
   Length,
   IsPostalCode,
 } from 'class-validator';
-import { DocumentType } from 'src/constants/document-type.enum';
-import { Contract } from 'src/modules/contracts/entities/contract.entity';
+import { DocumentType } from '../../../constants/document-type.enum';
+import { Contract } from '../../contracts/entities/contract.entity';
 
 @Entity()
 export class Alumn {

@@ -9,8 +9,8 @@ import {
 } from 'typeorm';
 import { IsEmail, IsEnum } from 'class-validator';
 import { Exclude } from 'class-transformer';
-import { UserRoles } from 'src/constants/Roles.enum';
-import { Contract } from 'src/modules/contracts/entities/contract.entity';
+import { UserRoles } from '../../../constants/Roles.enum';
+import { Contract } from '../../contracts/entities/contract.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
