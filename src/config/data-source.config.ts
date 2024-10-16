@@ -26,9 +26,9 @@ const ConfigDB = {
     migrationsDir: __dirname + '/migrations/',
   },
   migrationsTableName: 'migrations',
-  //ssl: {
-  // UnauthorizedException: true,
-  //},
+  ssl: {
+    UnauthorizedException: true,
+  },
 };
 
 const dataSourceConfig: DataSourceOptions = ConfigDB;
