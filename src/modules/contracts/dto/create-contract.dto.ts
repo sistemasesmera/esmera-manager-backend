@@ -122,6 +122,10 @@ export class CreateContractDto {
   @IsEnum(MissingDocumentation)
   missingDocumentation: MissingDocumentation;
 
+  @IsOptional()
+  @IsString()
+  additionalCourse?: string;
+
   // Talla de uniforme del alumno (opcional)
   @IsString()
   uniformSize?: string;

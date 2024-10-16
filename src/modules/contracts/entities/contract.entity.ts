@@ -138,6 +138,10 @@ export class Contract {
   @Column({ type: 'text' })
   latestStudies: string;
 
+  // Nuevo campo: Ultimos estudios realizados
+  @Column({ type: 'text', nullable: true })
+  additionalCourse: string;
+
   // Fecha de creacion del contrato (Para fines de base de datos)
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;

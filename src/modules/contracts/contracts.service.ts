@@ -23,7 +23,7 @@ export class ContractsService {
   ) {}
 
   async create(createContractDto: CreateContractDto, user: AuthenticatedUser) {
-    console.log(createContractDto.guarantorPopulation)
+    console.log('aditional course', createContractDto.additionalCourse);
     // Validación de usuario (comercial o comercial-plus)
     const userFound = await this.userRepository.findOneBy({
       id: user.id,
@@ -82,6 +82,7 @@ export class ContractsService {
       missingDocumentation: createContractDto.missingDocumentation, // Documentacion faltante
       uniformSize: createContractDto.uniformSize, //Talla uniforme
       latestStudies: createContractDto.latestStudies, // Ultimis estudios realizados
+      additionalCourse: createContractDto.additionalCourse, // Curso adicional
       name: this.generateContractName(
         {
           firstName: alumn.firstName,
