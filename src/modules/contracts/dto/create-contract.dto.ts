@@ -103,14 +103,17 @@ export class CreateContractDto {
   contractDate: string;
 
   // Fecha de presentación
+  @IsOptional()
   @IsDateString()
   presentationDate: string;
 
   // Fecha de inicio del curso
+  @IsOptional()
   @IsDateString()
   courseStartDate: string;
 
   // Fecha de finalización del curso
+  @IsOptional()
   @IsDateString()
   courseEndDate: string;
 

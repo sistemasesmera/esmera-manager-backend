@@ -27,7 +27,7 @@ const ConfigDB = {
   },
   migrationsTableName: 'migrations',
   ssl: {
-    UnauthorizedException: true,
+   UnauthorizedException: true,
   },
 };
 

@@ -66,10 +66,6 @@ export class CoursesService {
       course.name = updateCourseDto.name; // Actualizar nombre
     }
 
-    if (updateCourseDto.price) {
-      course.price = updateCourseDto.price; // Actualizar precio
-    }
-
     // Guardar el curso actualizado en la base de datos
     return this.courseRepository.save(course); // Guardar y devolver el curso actualizado
   }

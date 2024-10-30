@@ -5,9 +5,4 @@ export class CreateCourseDto {
   @IsString()
   @IsNotEmpty()
   name: string;
-
-  // Precio del curso (formato string, obligatorio)
-  @IsString()
-  @IsNotEmpty()
-  price: string;
 }

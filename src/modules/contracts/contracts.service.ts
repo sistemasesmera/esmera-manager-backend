@@ -23,7 +23,6 @@ export class ContractsService {
   ) {}
 
   async create(createContractDto: CreateContractDto, user: AuthenticatedUser) {
-    console.log('aditional course', createContractDto.additionalCourse);
     // Validación de usuario (comercial o comercial-plus)
     const userFound = await this.userRepository.findOneBy({
       id: user.id,
@@ -57,7 +56,7 @@ export class ContractsService {
       user, // Relación con el comercial
       alumn, // Relación con el alumno
       course, // Relación con el curso
-      coursePrice: createContractDto.coursePrice, // Precio del curso
+      coursePrice: parseInt(createContractDto.coursePrice), // Precio del curso
       hasGuarantor: createContractDto.hasGuarantor, // Booleano si tiene o no avalista.
       guarantorFirstName: createContractDto.guarantorFirstName, // Nombre Avalista
       guarantorLastName: createContractDto.guarantorLastName, // Apellidos Avalista
@@ -75,9 +74,15 @@ export class ContractsService {
       paymentAgreement: createContractDto.paymentAgreement, //Acuerdo de pago
       observations: createContractDto.observations, // Observaciones
       contractDate: new Date(createContractDto.contractDate), // Fecha contrato
-      presentationDate: new Date(createContractDto.presentationDate), // Fecha presentacion
-      courseStartDate: new Date(createContractDto.courseStartDate), // Fecha inicio
-      courseEndDate: new Date(createContractDto.courseEndDate), // Fecha finalizacion
+      presentationDate: createContractDto.presentationDate
+        ? new Date(createContractDto.presentationDate)
+        : null, // Fecha presentacion
+      courseStartDate: createContractDto.courseStartDate
+        ? new Date(createContractDto.courseStartDate)
+        : null, // Fecha inicio
+      courseEndDate: createContractDto.courseEndDate
+        ? new Date(createContractDto.courseEndDate)
+        : null, // Fecha finalizacion
       classSchedule: createContractDto.classSchedule, // Horario de clases
       missingDocumentation: createContractDto.missingDocumentation, // Documentacion faltante
       uniformSize: createContractDto.uniformSize, //Talla uniforme

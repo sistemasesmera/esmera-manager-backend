@@ -35,8 +35,8 @@ export class Contract {
   })
   course: Course;
 
-  @Column()
-  coursePrice: string;
+  @Column({ type: 'integer' }) // Cambia el tipo SQL a integer
+  coursePrice: number;
 
   @Column()
   name: string;
@@ -107,16 +107,16 @@ export class Contract {
   contractDate: Date;
 
   // Nuevo campo: Fecha de presentación
-  @Column({ type: 'date' })
-  presentationDate: Date;
+  @Column({ type: 'date', nullable: true }) // Permite que el campo sea nulo
+  presentationDate: Date | null;
 
   // Nuevo campo: Fecha de inicio del curso
-  @Column({ type: 'date' })
-  courseStartDate: Date;
+  @Column({ type: 'date', nullable: true }) // Permite que el campo sea nulo
+  courseStartDate: Date | null;
 
   // Nuevo campo: Fecha de finalización del curso
-  @Column({ type: 'date' })
-  courseEndDate: Date;
+  @Column({ type: 'date', nullable: true }) // Permite que el campo sea nulo
+  courseEndDate: Date | null;
 
   // Nuevo campo: Horario de clases
   @Column({ type: 'text' })

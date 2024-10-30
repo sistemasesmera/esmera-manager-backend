@@ -17,10 +17,6 @@ export class Course {
   @Column({ length: 100 })
   name: string;
 
-  // Precio del curso (manejado como string)
-  @Column({ type: 'varchar', length: 20 })
-  price: string;
-
   // Relación uno a muchos con contratos (Un curso puede tener muchos contratos)
   @OneToMany(() => Contract, (contract) => contract.course)
   contracts: Contract[];
