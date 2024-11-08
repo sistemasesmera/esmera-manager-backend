@@ -85,6 +85,12 @@ export class Alumn {
   @IsNotEmpty()
   province: string;
 
+  @Column({ type: 'boolean', default: false })
+  isVerified: boolean;
+
+  @Column({ nullable: true })
+  code: string;
+
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
 

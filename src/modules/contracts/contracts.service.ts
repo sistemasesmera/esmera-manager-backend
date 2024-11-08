@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateContractDto } from './dto/create-contract.dto';
@@ -41,6 +45,9 @@ export class ContractsService {
       );
     }
 
+    if (!alumn.isVerified) {
+      throw new BadRequestException(`Alumn not verified`);
+    }
     // Validación de curso
     const course = await this.courseRepository.findOneBy({
       id: createContractDto.courseId,

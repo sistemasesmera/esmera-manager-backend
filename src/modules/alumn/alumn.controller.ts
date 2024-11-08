@@ -7,6 +7,8 @@ import {
   UseGuards,
   Query,
   Put,
+  NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { AlumnService } from './alumn.service';
 import { CreateAlumnDto } from './dto/create-alumn.dto';
@@ -16,6 +18,8 @@ import { UserRoles } from 'src/constants/Roles.enum';
 import { Roles } from '../auth/roles.decorator';
 import { FilterAlumnDto } from './dto/filter-alumn.dto';
 import { UpdateAlumnDto } from './dto/update-alumn.dto';
+import { SendVerificationCodeDto } from './dto/send-verification-code.dto';
+import { VerifyCode } from './dto/verify-code.dto';
 
 @Controller('alumns')
 export class AlumnController {
@@ -54,5 +58,42 @@ export class AlumnController {
     @Body() updateAlumnDto: UpdateAlumnDto,
   ) {
     return this.alumnService.update(id, updateAlumnDto);
+  }
+
+  // Endpoint para enviar el codigo al email del alumno.
+  @Post('send-verification-code')
+  async sendVerificationCode(
+    @Body() sendVerificationCodeDto: SendVerificationCodeDto,
+  ) {
+    await this.alumnService.sendVerificationCode(
+      sendVerificationCodeDto.alumnId,
+    );
+
+    return {
+      message: 'El código de verificación ha sido enviado al email del alumno',
+    };
+  }
+
+  // Endpoint para activar el alumno mediante el codigo.
+  @Post('verify-code')
+  async verifyCode(@Body() verifyCode: VerifyCode) {
+    const alumn = await this.alumnService.findById(verifyCode.alumnId);
+
+    if (!alumn) {
+      throw new NotFoundException('Alumno no encontrado');
+    }
+    if (alumn.isVerified) {
+      throw new BadRequestException('El alumno ya ha sido verificado');
+    }
+
+    if (!alumn.code) {
+      throw new BadRequestException('No se ha generado código de verificación');
+    }
+
+    await this.alumnService.verifyEmail(alumn, verifyCode.code);
+
+    return {
+      message: 'El código de verificación ha sido verificado correctamente',
+    };
   }
 }

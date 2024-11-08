@@ -3,6 +3,7 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -10,12 +11,16 @@ import { CreateAlumnDto } from './dto/create-alumn.dto';
 import { Alumn } from './entities/alumn.entity';
 import { FilterAlumnDto } from './dto/filter-alumn.dto';
 import { UpdateAlumnDto } from './dto/update-alumn.dto';
+import { EmailService } from '../email/email.service';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AlumnService {
   constructor(
     @InjectRepository(Alumn)
     private readonly alumnRepository: Repository<Alumn>,
+    private readonly emailService: EmailService,
+    private readonly configService: ConfigService,
   ) {}
 
   // Create a new Alumn
@@ -31,11 +36,18 @@ export class AlumnService {
         `El alumno con el numero de documento: ${createAlumnDto.documentNumber} ya existe`,
       );
     }
-
     createAlumnDto.email = createAlumnDto.email.toLowerCase();
     // Crear un nuevo alumno si no existe
-    const newAlumn = this.alumnRepository.create(createAlumnDto);
+    const newAlumn = this.alumnRepository.create({
+      ...createAlumnDto,
+    });
     return await this.alumnRepository.save(newAlumn);
+  }
+
+  async findById(id: string) {
+    const alumn = await this.alumnRepository.findOne({ where: { id: id } });
+
+    return alumn;
   }
 
   // Find a single Alumn by document number
@@ -129,10 +141,48 @@ export class AlumnService {
     const updatedAlumn = {
       ...alumn, // Mantenemos los valores existentes
       ...updateAlumnDto, // Sobrescribimos solo los campos proporcionados
+      isVerified: false, // Verific
     };
 
     await this.alumnRepository.save(updatedAlumn);
 
     return updatedAlumn; // Retornar el alumno actualizado
+  }
+
+  async sendVerificationCode(alumnId: string) {
+    const alumn = await this.alumnRepository.findOne({
+      where: { id: alumnId },
+    });
+
+    if (!alumn) {
+      throw new NotFoundException('Alumno no encontrado');
+    }
+
+    if (alumn.isVerified) {
+      throw new BadRequestException('El alumno ya está verificado');
+    }
+
+    // Generar un codigo aleatorio de 5 caracteres
+    const code = Math.floor(10000 + Math.random() * 90000).toString();
+    alumn.code = code;
+
+    await this.emailService.sendVerificationCode(code, alumn.email);
+    await this.alumnRepository.save(alumn);
+  }
+
+  async verifyEmail(alumn: Alumn, code: string) {
+    const secretCode = this.configService.get<string>(
+      'VERIFICATION_SECRET_CODE',
+    ); // Código secreto para bypass de verificación
+
+    // Permite la verificación si el código proporcionado es el código correcto o el código secreto
+    if (alumn.code !== code && code !== secretCode) {
+      throw new BadRequestException('El código de verificación es incorrecto');
+    }
+
+    // Si el código es válido, marca al alumno como verificado y guarda en la base de datos
+    alumn.isVerified = true;
+    alumn.code = null;
+    await this.alumnRepository.save(alumn);
   }
 }

@@ -1,10 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Body, Controller, Post, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
@@ -26,10 +20,5 @@ export class AuthController {
       throw new UnauthorizedException('Invalid credentials');
     }
     return result;
-  }
-  @Get()
-  async test() {
-    return 'Hello World!';
-    // Esto es para probar si la API está funcionando correctamente.
   }
 }

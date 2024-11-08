@@ -7,6 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AlumnModule } from './modules/alumn/alumn.module';
 import { DataSourceConfig } from './config/data-source.config';
+import { EmailModule } from './modules/email/email.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { DataSourceConfig } from './config/data-source.config';
     CoursesModule,
     ContractsModule,
     AlumnModule,
+    EmailModule,
   ],
   controllers: [],
   providers: [],
