@@ -55,6 +55,8 @@ export class DashboardService {
       };
     });
 
+    // Ordenar las métricas por amountTotal de mayor a menor
+    metrics.sort((a, b) => b.amountTotal - a.amountTotal);
     // 5. Devolver la respuesta con las métricas y el total de ventas
     return {
       today: today.toISOString().split('T')[0],
