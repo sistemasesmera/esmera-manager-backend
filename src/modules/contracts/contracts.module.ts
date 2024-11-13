@@ -11,5 +11,6 @@ import { Course } from '../courses/entities/course.entity';
   imports: [TypeOrmModule.forFeature([Contract, User, Alumn, Course])],
   controllers: [ContractsController],
   providers: [ContractsService],
+  exports: [ContractsService], // Asegúrate de exportar el servicio
 })
 export class ContractsModule {}

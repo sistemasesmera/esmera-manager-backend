@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { CreateContractDto } from './dto/create-contract.dto';
 import { Contract } from './entities/contract.entity';
 import { User } from '../users/entities/user.entity';
@@ -170,4 +170,34 @@ export class ContractsService {
     // Combina las partes para formar el nombre del contrato
     return `${firstNamePart}-${lastNamePart}-${courseNamePart}-${uniqueIdPart}`;
   };
+
+  async getContractsForCurrentMonth(): Promise<Contract[]> {
+    const today = new Date();
+    const currentMonth = today.getMonth() + 1; // Mes actual (1-12)
+    const currentYear = today.getFullYear(); // Año actual
+
+    // Obtener los contratos del mes actual con relación a 'user' y solo campos específicos
+    const contracts = await this.contractRepository.find({
+      where: {
+        createdAt: Between(
+          new Date(currentYear, currentMonth - 1, 1), // Primer día del mes
+          new Date(currentYear, currentMonth, 0), // Último día del mes
+        ),
+      },
+      relations: ['user'], // Relacionamos con 'user'
+      select: {
+        id: true, // Traemos el campo 'id' del contrato
+        coursePrice: true, // Traemos el campo 'amount' del contrato
+        createdAt: true, // Traemos la fecha del contrato
+        user: {
+          // Relación con 'user'
+          firstName: true, // Solo traemos el 'firstName' del 'user'
+          lastName: true, // Solo traemos el 'lastName' del 'user'
+          id: true, // Solo traemos el 'id' del contrato
+        },
+      },
+    });
+
+    return contracts;
+  }
 }

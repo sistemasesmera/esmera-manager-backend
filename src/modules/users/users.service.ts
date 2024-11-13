@@ -9,12 +9,15 @@ import { User } from './entities/user.entity';
 import { UserRoles } from 'src/constants/Roles.enum';
 import { CreateCommercialDto } from './dto/create-commercial.dto.';
 import * as bcrypt from 'bcryptjs';
+import { Contract } from '../contracts/entities/contract.entity';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    @InjectRepository(Contract)
+    private contractRepository: Repository<Contract>,
   ) {}
 
   // Busca a un Usuario por Email (Se utiliza en el jwtStrategy)
@@ -106,5 +109,35 @@ export class UsersService {
     await user.save(); // Guardamos los cambios en la base de datos
 
     return user; // Retorna el usuario actualizado
+  }
+
+  async getUsersWithContracts(
+    currentMonth: number,
+    currentYear: number,
+  ): Promise<User[]> {
+    // Obtener todos los contratos con la relación 'user'
+    const usersWithContracts = await this.contractRepository
+      .createQueryBuilder('contract')
+      .leftJoinAndSelect('contract.user', 'user') // Unimos la entidad 'user'
+      .where('EXTRACT(MONTH FROM contract.createdAt) = :month', {
+        month: currentMonth,
+      })
+      .andWhere('EXTRACT(YEAR FROM contract.createdAt) = :year', {
+        year: currentYear,
+      })
+      .getMany();
+
+    // Usamos un Map o Set para asegurarnos de que cada usuario sea único
+    const uniqueUsersMap = new Map();
+    usersWithContracts.forEach((contract) => {
+      if (!uniqueUsersMap.has(contract.user.id)) {
+        uniqueUsersMap.set(contract.user.id, contract.user); // Guardamos el usuario en el Map si no está
+      }
+    });
+
+    // Convertimos el Map a un array de usuarios únicos
+    const uniqueUsers = Array.from(uniqueUsersMap.values());
+
+    return uniqueUsers;
   }
 }
