@@ -72,7 +72,7 @@ export class EmailService {
           </div>
         `,
       });
-      console.log('Email enviado exitosamente');
+      console.log('Email enviado exitosamente a: ' + email);
     } catch (error) {
       console.error('Error al enviar el email', error);
       if (error.response) {

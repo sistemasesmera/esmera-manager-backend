@@ -18,6 +18,9 @@ import { PaginationDto } from './dto/PaginationDto.dto';
 import { User } from './entities/user.entity';
 import { UpdateCommercialStatusDto } from './dto/update-commercial-status.dto';
 import { CreateCommercialDto } from './dto/create-commercial.dto.';
+import { AuthenticatedUser } from 'src/interfaces/authenticated-user.interface';
+import { UserData } from 'src/decorators/user.decorator';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('users')
 export class UsersController {
@@ -54,6 +57,16 @@ export class UsersController {
       id,
       updateCommercialStatusDto.active,
     );
+  }
+
+  @Put()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS, UserRoles.COMMERCIAL)
+  async updateUser(
+    @Body() updateUserData: UpdateUserDto, // Usa el DTO aquí
+    @UserData() user: AuthenticatedUser, // Usa el decorador para obtener el usuario autenticado
+  ): Promise<User> {
+    return this.usersService.updateUser(updateUserData, user);
   }
 
   //TODO: Falta que el ComercialPlus y Admin puedan editar un comercial

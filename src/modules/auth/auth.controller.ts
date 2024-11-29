@@ -1,7 +1,20 @@
-import { Body, Controller, Post, UnauthorizedException } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { RolesGuard } from './roles.guard';
+import { UserRoles } from 'src/constants/Roles.enum';
+import { Roles } from './roles.decorator';
+import { AuthenticatedUser } from 'src/interfaces/authenticated-user.interface';
+import { UserData } from 'src/decorators/user.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -20,5 +33,14 @@ export class AuthController {
       throw new UnauthorizedException('Invalid credentials');
     }
     return result;
+  }
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS, UserRoles.COMMERCIAL)
+  @Post('change-password')
+  async changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @UserData() user: AuthenticatedUser,
+  ) {
+    return this.authService.changePassword(user, changePasswordDto);
   }
 }

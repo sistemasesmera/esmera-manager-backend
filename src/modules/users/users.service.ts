@@ -10,6 +10,9 @@ import { UserRoles } from 'src/constants/Roles.enum';
 import { CreateCommercialDto } from './dto/create-commercial.dto.';
 import * as bcrypt from 'bcryptjs';
 import { Contract } from '../contracts/entities/contract.entity';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { AuthenticatedUser } from 'src/interfaces/authenticated-user.interface';
+import { formatText } from 'src/utils/string-utils';
 
 @Injectable()
 export class UsersService {
@@ -43,10 +46,13 @@ export class UsersService {
 
     // Convertir el email a minúsculas
     const normalizedEmail = email.toLowerCase();
+
+    const formatName = formatText(firstName);
+    const formatLastName = formatText(lastName);
     // Crear y guardar el nuevo usuario en la base de datos
     const newUser = this.usersRepository.create({
-      firstName,
-      lastName,
+      firstName: formatName,
+      lastName: formatLastName,
       email: normalizedEmail,
       password: hashedPassword,
     });
@@ -139,5 +145,38 @@ export class UsersService {
     const uniqueUsers = Array.from(uniqueUsersMap.values());
 
     return uniqueUsers;
+  }
+
+  async updateUser(
+    updateUserData: UpdateUserDto,
+    user: AuthenticatedUser,
+  ): Promise<User> {
+    // Busca el usuario por ID desde el token
+    const existingUser = await this.usersRepository.findOne({
+      where: { id: user.id },
+    });
+    if (!existingUser) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    // Formatear el nombre y apellido antes de actualizarlos
+    if (updateUserData.firstName) {
+      updateUserData.firstName = formatText(updateUserData.firstName);
+    }
+
+    if (updateUserData.lastName) {
+      updateUserData.lastName = formatText(updateUserData.lastName);
+    }
+    // Actualiza solo los campos permitidos
+    Object.assign(existingUser, updateUserData);
+    // Guarda los cambios en la base de datos
+    await this.usersRepository.save(existingUser);
+
+    delete existingUser.active;
+    delete existingUser.role;
+    delete existingUser.id;
+    delete existingUser.createdAt;
+
+    return existingUser;
   }
 }

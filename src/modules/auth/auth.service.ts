@@ -2,6 +2,7 @@ import {
   Injectable,
   ConflictException,
   UnauthorizedException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -11,6 +12,8 @@ import { User } from '../users/entities/user.entity';
 import { JwtPayload } from 'src/interfaces/jwt-payload.interface';
 import { JwtService } from '@nestjs/jwt';
 import { LoginUserDto } from './dto/login-user.dto';
+import { AuthenticatedUser } from 'src/interfaces/authenticated-user.interface';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -83,5 +86,47 @@ export class AuthService {
       return user;
     }
     return null;
+  }
+  async changePassword(
+    user: AuthenticatedUser, // Usuario autenticado (por ejemplo, obtenido de JWT)
+    changePasswordDto: ChangePasswordDto, // DTO que contiene las contraseñas
+  ): Promise<{ message: string }> {
+    const { oldPassword, newPassword, confirmPassword } = changePasswordDto;
+
+    // Verificar que la nueva contraseña y la confirmación coinciden
+    if (newPassword !== confirmPassword) {
+      throw new BadRequestException('Las contraseñas no coinciden');
+    }
+
+    // Buscar el usuario en la base de datos
+    const existingUser = await this.userRepository.findOne({
+      where: { id: user.id },
+      select: ['id', 'email', 'password'], // Incluye explícitamente el campo `password`
+    });
+
+    if (!existingUser) {
+      throw new UnauthorizedException('Usuario no encontrado');
+    }
+
+    // Verificar que la contraseña actual (oldPassword) sea válida
+    const isOldPasswordValid = await bcrypt.compare(
+      oldPassword,
+      existingUser.password,
+    );
+
+    if (!isOldPasswordValid) {
+      throw new UnauthorizedException('La contraseña actual es incorrecta');
+    }
+
+    // Encriptar la nueva contraseña
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    // Actualizar la contraseña en la base de datos
+    existingUser.password = hashedNewPassword;
+
+    // Guardar el usuario con la nueva contraseña
+    await this.userRepository.save(existingUser);
+
+    return { message: 'Contraseña actualizada exitosamente' };
   }
 }

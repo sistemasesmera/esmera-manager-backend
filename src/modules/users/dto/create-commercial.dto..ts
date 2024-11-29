@@ -21,10 +21,9 @@ export class CreateCommercialDto {
 
   @IsNotEmpty()
   @IsString()
-  @Length(8, 20) // Longitud mínima de 8 caracteres
-  @Matches(/^(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z\d]{8,20}$/, {
-    message:
-      'La contraseña debe tener al menos 8 caracteres, incluyendo al menos una letra y un número.',
+  @Length(6) // Longitud mínima de 6 caracteres
+  @Matches(/^.{6,}$/, {
+    message: 'La contraseña debe tener mas de 6 caracteres.',
   })
   password: string;
 }

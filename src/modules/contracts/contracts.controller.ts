@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { ContractsService } from './contracts.service';
 import { CreateContractDto } from './dto/create-contract.dto';
-import { User } from 'src/decorators/user.decorator';
+import { UserData } from 'src/decorators/user.decorator';
 import { UserRoles } from 'src/constants/Roles.enum';
 import { Roles } from '../auth/roles.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -26,7 +26,7 @@ export class ContractsController {
   @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS, UserRoles.COMMERCIAL)
   create(
     @Body() createContractDto: CreateContractDto,
-    @User() user: AuthenticatedUser,
+    @UserData() user: AuthenticatedUser,
   ) {
     return this.contractsService.create(createContractDto, user);
   }
@@ -34,7 +34,7 @@ export class ContractsController {
   @Get('my-contracts')
   @UseGuards(JwtAuthGuard)
   getMyContracts(
-    @User() user: AuthenticatedUser,
+    @UserData() user: AuthenticatedUser,
     @Query(new ValidationPipe({ transform: true, whitelist: true }))
     paginationDto: PaginationDto,
   ) {
