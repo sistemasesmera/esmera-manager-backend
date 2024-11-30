@@ -173,16 +173,17 @@ export class ContractsService {
 
   async getContractsForCurrentMonth(): Promise<Contract[]> {
     const today = new Date();
-    const currentMonth = today.getMonth() + 1; // Mes actual (1-12)
+    const currentMonth = today.getMonth(); // Mes actual (0-11)
     const currentYear = today.getFullYear(); // Año actual
 
-    // Obtener los contratos del mes actual con relación a 'user' y solo campos específicos
+    // Calcular el rango del mes actual
+    const startOfMonth = new Date(currentYear, currentMonth, 1, 0, 0, 0); // Primer segundo del mes
+    const endOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59); // Último segundo del mes
+
+    // Obtener los contratos del mes actual
     const contracts = await this.contractRepository.find({
       where: {
-        createdAt: Between(
-          new Date(currentYear, currentMonth - 1, 1), // Primer día del mes
-          new Date(currentYear, currentMonth, 0), // Último día del mes
-        ),
+        createdAt: Between(startOfMonth, endOfMonth), // Rango ajustado
       },
       relations: ['user'], // Relacionamos con 'user'
       select: {
