@@ -12,6 +12,7 @@ import { Alumn } from '../alumn/entities/alumn.entity';
 import { Course } from '../courses/entities/course.entity';
 import { AuthenticatedUser } from 'src/interfaces/authenticated-user.interface';
 import { v4 as uuidv4 } from 'uuid';
+import { ReportFiltersDto } from './dto/report-filters.dto';
 
 @Injectable()
 export class ContractsService {
@@ -199,5 +200,92 @@ export class ContractsService {
     });
 
     return contracts;
+  }
+
+  async getReport(filters: ReportFiltersDto) {
+    const { startDate, endDate, courseId, userId } = filters;
+
+    // Convertir las fechas a objetos Date
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    // Validación: asegurarse de que endDate no sea anterior a startDate
+    if (end < start) {
+      throw new Error(
+        'La fecha de fin no puede ser anterior a la fecha de inicio',
+      );
+    }
+
+    // Validación: no permitir un rango de fechas superior a 2 años
+    const maxAllowedRange = 730; // 2 años en días
+    const timeDifference =
+      (end.getTime() - start.getTime()) / (1000 * 3600 * 24); // Calculamos la diferencia en días
+
+    if (timeDifference > maxAllowedRange) {
+      throw new Error(
+        'El rango de fechas no puede ser mayor a 2 años (730 días).',
+      );
+    }
+
+    // Iniciar la consulta de contratos
+    const query = this.contractRepository.createQueryBuilder('contract');
+
+    // Seleccionar solo los campos necesarios de la entidad contract
+    query
+      .select([
+        'contract.id', // Campo id de contract (debe ser seleccionado explícitamente)
+        'contract.name', // Nombre del contrato
+        'contract.paymentAgreement', // Acuerdo de pago
+        'contract.coursePrice', // Precio del curso
+        'contract.createdAt', // Fecha de creación del contrato
+      ])
+      .leftJoin('contract.alumn', 'alumn') // Relación con Alumno
+      .leftJoin('contract.course', 'course') // Relación con Curso
+      .leftJoin('contract.user', 'user') // Relación con Comercial
+      .addSelect([
+        'alumn.firstName', // Primer nombre del Alumno
+        'alumn.id', // Primer nombre del Alumno
+        'alumn.lastName', // Apellido del Alumno
+        'course.name', // Nombre del Curso
+        'course.id', // Nombre del Curso
+        'user.firstName', // Nombre del Comercial
+        'user.id', // Nombre del Comercial
+        'user.lastName', // Apellido del Comercial
+      ])
+      .where('contract.createdAt >= :startDate', {
+        startDate: new Date(startDate + 'T00:00:00Z'),
+      })
+      .andWhere('contract.createdAt <= :endDate', {
+        endDate: new Date(endDate + 'T23:59:59Z'),
+      });
+
+    // Filtrar por curso (opcional)
+    if (courseId) {
+      query.andWhere('contract.courseId = :courseId', { courseId });
+    }
+
+    // Filtrar por comercial (opcional)
+    if (userId) {
+      query.andWhere('contract.userId = :userId', { userId });
+    }
+
+    // Obtener los contratos filtrados
+    const contracts = await query.getMany();
+
+    // Calcular los datos generales del reporte
+    return {
+      summary: {
+        totalContracts: contracts.length,
+        totalAmount: contracts.reduce(
+          (sum, contract) => sum + contract.coursePrice,
+          0,
+        ),
+        firstContractDate: contracts.length ? contracts[0].createdAt : null,
+        lastContractDate: contracts.length
+          ? contracts[contracts.length - 1].createdAt
+          : null,
+      },
+      contracts,
+    };
   }
 }
