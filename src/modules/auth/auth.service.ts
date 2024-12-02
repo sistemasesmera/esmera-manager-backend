@@ -81,6 +81,9 @@ export class AuthService {
       where: { email },
       select: ['id', 'email', 'password', 'role', 'firstName', 'lastName'], // Incluye explícitamente el campo `password`
     });
+    if (!user.active) {
+      throw new UnauthorizedException('Usuario inactivo');
+    }
     if (user && (await bcrypt.compare(password, user.password))) {
       delete user.password;
       return user;
