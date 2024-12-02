@@ -79,7 +79,15 @@ export class AuthService {
   async validateUser(email: string, password: string): Promise<User | null> {
     const user = await this.userRepository.findOne({
       where: { email },
-      select: ['id', 'email', 'password', 'role', 'firstName', 'lastName'], // Incluye explícitamente el campo `password`
+      select: [
+        'id',
+        'email',
+        'password',
+        'role',
+        'firstName',
+        'lastName',
+        'active',
+      ], // Incluye explícitamente el campo `password`
     });
     if (!user.active) {
       throw new UnauthorizedException('Usuario inactivo');
