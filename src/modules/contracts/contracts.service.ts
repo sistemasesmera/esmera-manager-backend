@@ -204,7 +204,7 @@ export class ContractsService {
   }
 
   async getReport(filters: ReportFiltersDto) {
-    const { startDate, endDate, courseId, userId } = filters;
+    const { startDate, endDate, courseId, userId, page, limit } = filters;
 
     // Convertir las fechas a objetos Date
     const start = new Date(startDate);
@@ -228,30 +228,31 @@ export class ContractsService {
       );
     }
 
-    // Iniciar la consulta de contratos
-    const query = this.contractRepository.createQueryBuilder('contract');
+    // Calcular el inicio del rango para paginación
+    const skip = (page - 1) * limit;
 
-    // Seleccionar solo los campos necesarios de la entidad contract
-    query
+    // Primera consulta: Obtener los contratos paginados
+    const query = this.contractRepository
+      .createQueryBuilder('contract')
       .select([
-        'contract.id', // Campo id de contract (debe ser seleccionado explícitamente)
-        'contract.name', // Nombre del contrato
-        'contract.paymentAgreement', // Acuerdo de pago
-        'contract.coursePrice', // Precio del curso
-        'contract.createdAt', // Fecha de creación del contrato
+        'contract.id',
+        'contract.name',
+        'contract.paymentAgreement',
+        'contract.coursePrice',
+        'contract.createdAt',
       ])
-      .leftJoin('contract.alumn', 'alumn') // Relación con Alumno
-      .leftJoin('contract.course', 'course') // Relación con Curso
-      .leftJoin('contract.user', 'user') // Relación con Comercial
+      .leftJoin('contract.alumn', 'alumn')
+      .leftJoin('contract.course', 'course')
+      .leftJoin('contract.user', 'user')
       .addSelect([
-        'alumn.firstName', // Primer nombre del Alumno
-        'alumn.id', // Primer nombre del Alumno
-        'alumn.lastName', // Apellido del Alumno
-        'course.name', // Nombre del Curso
-        'course.id', // Nombre del Curso
-        'user.firstName', // Nombre del Comercial
-        'user.id', // Nombre del Comercial
-        'user.lastName', // Apellido del Comercial
+        'alumn.firstName',
+        'alumn.id',
+        'alumn.lastName',
+        'course.name',
+        'course.id',
+        'user.firstName',
+        'user.id',
+        'user.lastName',
       ])
       .where('contract.createdAt >= :startDate', {
         startDate: new Date(startDate + 'T00:00:00Z'),
@@ -260,31 +261,53 @@ export class ContractsService {
         endDate: new Date(endDate + 'T23:59:59Z'),
       });
 
-    // Filtrar por curso (opcional)
     if (courseId) {
       query.andWhere('contract.courseId = :courseId', { courseId });
     }
 
-    // Filtrar por comercial (opcional)
     if (userId) {
       query.andWhere('contract.userId = :userId', { userId });
     }
 
-    // Obtener los contratos filtrados
-    const contracts = await query.getMany();
+    // Ordenar por fecha de creación (ascendente)
+    query.orderBy('contract.createdAt', 'ASC');
 
-    // Calcular los datos generales del reporte
+    query.skip(skip).take(limit);
+
+    const [contracts, totalContracts] = await query.getManyAndCount();
+
+    // Segunda consulta: Calcular el monto total de todos los contratos en el rango de fechas
+    const totalAmountQuery = this.contractRepository
+      .createQueryBuilder('contract')
+      .select('SUM(contract.coursePrice)', 'totalAmount')
+      .where('contract.createdAt >= :startDate', {
+        startDate: new Date(startDate + 'T00:00:00Z'),
+      })
+      .andWhere('contract.createdAt <= :endDate', {
+        endDate: new Date(endDate + 'T23:59:59Z'),
+      });
+
+    if (courseId) {
+      totalAmountQuery.andWhere('contract.courseId = :courseId', { courseId });
+    }
+
+    if (userId) {
+      totalAmountQuery.andWhere('contract.userId = :userId', { userId });
+    }
+
+    const totalAmountResult = await totalAmountQuery.getRawOne();
+    const totalAmount = totalAmountResult?.totalAmount || 0;
+
+    // Retornar la respuesta con los datos completos
     return {
       summary: {
-        totalContracts: contracts.length,
-        totalAmount: contracts.reduce(
-          (sum, contract) => sum + contract.coursePrice,
-          0,
-        ),
-        firstContractDate: contracts.length ? contracts[0].createdAt : null,
-        lastContractDate: contracts.length
-          ? contracts[contracts.length - 1].createdAt
-          : null,
+        totalContracts,
+        totalAmount, // Monto total de todos los contratos en el rango
+      },
+      pagination: {
+        total: totalContracts,
+        page,
+        limit,
       },
       contracts,
     };

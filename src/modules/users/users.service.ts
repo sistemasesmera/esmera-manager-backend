@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Like, Repository } from 'typeorm';
+import { In, Like, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { UserRoles } from 'src/constants/Roles.enum';
 import { CreateCommercialDto } from './dto/create-commercial.dto.';
@@ -72,7 +72,9 @@ export class UsersService {
     const skip = (page - 1) * limit;
 
     // Construye las condiciones dinámicamente según los filtros recibidos
-    const where: any = { role: UserRoles.COMMERCIAL };
+    const where: any = {
+      role: In([UserRoles.COMMERCIAL, UserRoles.COMMERCIAL_PLUS]), // Filtrar por múltiples roles
+    };
 
     // Si se proporciona el filtro de email, añade una condición de 'LIKE'
     if (email) {
