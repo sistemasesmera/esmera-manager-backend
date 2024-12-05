@@ -1,5 +1,6 @@
-import { Controller, Get } from '@nestjs/common';
+import { Body, Controller, Get, Put } from '@nestjs/common';
 import { DashboardService } from './dashboard.service';
+import { UpdateCommonGoalDto } from './dto/update-common.goal.dto';
 
 @Controller('dashboard')
 export class DashboardController {
@@ -8,5 +9,9 @@ export class DashboardController {
   @Get()
   findAll() {
     return this.dashboardService.findAll();
+  }
+  @Put('/commonGoal')
+  putCommonGoal(@Body() commonGoal: UpdateCommonGoalDto) {
+    return this.dashboardService.updateCommonGoal(commonGoal);
   }
 }

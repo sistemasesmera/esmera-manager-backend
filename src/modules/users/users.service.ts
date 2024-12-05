@@ -149,6 +149,17 @@ export class UsersService {
     return uniqueUsers;
   }
 
+  async getUsersActiveForMonth(): Promise<User[]> {
+    // Obtener todos los usuarios activos (sin filtrarlos por contratos o fechas)
+    const users = await this.usersRepository.find({
+      where: {
+        active: true,
+        role: In([UserRoles.COMMERCIAL, UserRoles.COMMERCIAL_PLUS]), // Filtrar por múltiples roles
+      },
+    }); // Este método traerá todos los usuarios activos de la base de datos
+
+    return users;
+  }
   async updateUser(
     updateUserData: UpdateUserDto,
     user: AuthenticatedUser,
