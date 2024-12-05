@@ -4,8 +4,8 @@ import { IsNumber, IsPositive } from 'class-validator';
 export class UpdateCommonGoalDto {
   @IsNumber()
   @IsPositive()
-  commonGoal: number;
+  commonGoalAmount: number;
   @IsNumber()
   @IsPositive()
-  contractsComercialGoal: number;
+  commonGoalContracts: number;
 }

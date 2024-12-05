@@ -39,12 +39,15 @@ export class DashboardService {
   }
 
   // Actualizar el objetivo común en el archivo JSON
-  private setCommonGoal(newGoal: UpdateCommonGoalDto): void {
-    const data = { commonGoal: newGoal };
+  private setCommonGoal(commonGoal: UpdateCommonGoalDto): void {
+    const data = {
+      commonGoalAmount: commonGoal.commonGoalAmount,
+      commonGoalContracts: commonGoal.commonGoalContracts,
+    };
     try {
       fs.writeFileSync(
         this.commonGoalPath,
-        JSON.stringify(data.commonGoal, null, 2),
+        JSON.stringify(data, null, 2),
         'utf-8',
       );
     } catch (error) {
