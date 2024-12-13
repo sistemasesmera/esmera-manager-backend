@@ -331,6 +331,8 @@ export class DashboardService {
         totalDailyContracts,
         totalDailyResultContracts,
       },
+      holidays: monthGoalsData.holidays,
+      days_in_month: monthGoalsData.days_in_month,
     };
   }
 

@@ -134,7 +134,7 @@ export class GoalsService {
     });
 
     if (!goal) {
-      throw new NotFoundException(`No goal found for month ${month_year}.`);
+      throw new BadRequestException(`No goal found for month ${month_year}.`);
     }
     return goal;
   }
