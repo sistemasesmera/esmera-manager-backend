@@ -324,7 +324,7 @@ export class DashboardService {
 
     // Devolver la respuesta con las métricas, el total de ventas y los objetivos
     return {
-      today: today.toISOString().split('T')[0],
+      today: today,
       metrics,
       total: {
         totalMonthAmountSold,
