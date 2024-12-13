@@ -307,6 +307,8 @@ export class DashboardService {
         resultContracts,
         monthAmount: userContracts.amountTotal,
         monthContracts: userContracts.numberContracts,
+        monthAmountGoal: sharedMonthlyGoal,
+        monthContractsGoal: sharedContractsGoal,
       };
     });
 
