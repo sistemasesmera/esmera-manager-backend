@@ -320,6 +320,8 @@ export class DashboardService {
       total: {
         totalMonthAmountSold,
         totalMonthContractsSold,
+        totalMonthAmountGoal: monthGoalsData.common_goal,
+        totalMonthContractsGoal: monthGoalsData.contracts_goal,
         totalDailyAmountGoal,
         totalDailyAmount,
         totalDailyResultAmount,
