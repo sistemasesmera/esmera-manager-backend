@@ -197,9 +197,16 @@ export class DashboardService {
     const contracts = await this.contractsService.getContractsForCurrentMonth();
 
     // Filtrar los contratos realizados hoy
+    const todayStart = new Date(today);
+    todayStart.setHours(0, 0, 0, 0); // Establecer a las 00:00:00
+
+    const todayEnd = new Date(today);
+    todayEnd.setHours(23, 59, 59, 999); // Establecer a las 23:59:59
+
+    // Filtramos los contratos del día actual utilizando el rango
     const todayContracts = contracts.filter((contract) => {
-      const contractDate = contract.createdAt.toISOString().split('T')[0]; // Asegurarse de que sea una cadena
-      return contractDate === todayFormatted;
+      const contractDate = new Date(contract.createdAt); // Asegúrate de que `createdAt` sea una fecha válida
+      return contractDate >= todayStart && contractDate <= todayEnd;
     });
 
     // Agrupar contratos por comercial
