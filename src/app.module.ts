@@ -9,6 +9,7 @@ import { AlumnModule } from './modules/alumn/alumn.module';
 import { DataSourceConfig } from './config/data-source.config';
 import { EmailModule } from './modules/email/email.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { GoalsModule } from './modules/goals/goals.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     AlumnModule,
     EmailModule,
     DashboardModule,
+    GoalsModule,
   ],
   controllers: [],
   providers: [],

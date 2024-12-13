@@ -10,6 +10,10 @@ export class DashboardController {
   findAll() {
     return this.dashboardService.findAll();
   }
+  @Get('/nicolas')
+  getDataDashboard() {
+    return this.dashboardService.getDataDashboard();
+  }
   @Put('/commonGoal')
   putCommonGoal(@Body() commonGoal: UpdateCommonGoalDto) {
     return this.dashboardService.updateCommonGoal(commonGoal);

@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { UsersService } from '../users/users.service';
 import { ContractsService } from '../contracts/contracts.service';
 import * as fs from 'fs';
 import * as path from 'path';
 import { UpdateCommonGoalDto } from './dto/update-common.goal.dto';
+import { GoalsService } from '../goals/goals.service';
 
 @Injectable()
 export class DashboardService {
@@ -18,6 +19,7 @@ export class DashboardService {
   constructor(
     private readonly usersService: UsersService,
     private readonly contractsService: ContractsService,
+    private readonly goalsService: GoalsService,
   ) {}
 
   // Leer el archivo JSON y devolver el objetivo común
@@ -164,5 +166,186 @@ export class DashboardService {
   async updateCommonGoal(newGoal: UpdateCommonGoalDto) {
     this.setCommonGoal(newGoal);
     return { message: 'Objetivo común actualizado correctamente' };
+  }
+
+  // Metodos nuevos.
+  async getDataDashboard() {
+    const today = new Date();
+    const yearMonth =
+      today.getFullYear() +
+      '-' +
+      (today.getMonth() + 1).toString().padStart(2, '0');
+
+    // Obtener los datos de las metas del mes
+    const monthGoalsData = await this.goalsService.getGoal(yearMonth);
+
+    // Inicializar holidays como array vacío si es null
+    const holidays = monthGoalsData.holidays || [];
+
+    // Verificar si el día actual es un día festivo
+    const todayFormatted = today.toISOString().split('T')[0]; // Formato YYYY-MM-DD
+    if (holidays.includes(todayFormatted)) {
+      throw new BadRequestException(
+        "It's a non-working day, therefore no data available.",
+      );
+    }
+
+    // Obtener los comerciales activos
+    const users = await this.usersService.getUsersActiveForMonth();
+
+    // Obtener todos los contratos del mes actual
+    const contracts = await this.contractsService.getContractsForCurrentMonth();
+
+    // Filtrar los contratos realizados hoy
+    const todayContracts = contracts.filter((contract) => {
+      const contractDate = contract.createdAt.toISOString().split('T')[0]; // Asegurarse de que sea una cadena
+      return contractDate === todayFormatted;
+    });
+
+    // Agrupar contratos por comercial
+    const groupedContracts = contracts.reduce((acc, contract) => {
+      const userId = contract.user.id;
+      if (!acc[userId]) {
+        acc[userId] = {
+          nameComercial: contract.user.firstName + ' ' + contract.user.lastName,
+          numberContracts: 0,
+          amountTotal: 0,
+        };
+      }
+      acc[userId].numberContracts += 1;
+      acc[userId].amountTotal += contract.coursePrice;
+      return acc;
+    }, {});
+
+    // Calcular totales
+    let totalMonthAmountSold = 0;
+    let totalMonthContractsSold = 0;
+
+    // Calcular el número de comerciales
+    const numberOfCommercials = users.length;
+
+    // Calcular el objetivo mensual para cada comercial y redondear a entero
+    const sharedMonthlyGoal = Math.floor(
+      monthGoalsData.common_goal / numberOfCommercials,
+    );
+
+    // Calcular el objetivo de contratos mensual para cada comercial y redondear a entero
+    const sharedContractsGoal = Math.floor(
+      monthGoalsData.contracts_goal / numberOfCommercials,
+    );
+
+    // Variables para totales diarios
+    let totalDailyAmountGoal = 0;
+    let totalDailyAmount = 0;
+    let totalDailyResultAmount = 0;
+    let totalDailyContractsGoal = 0;
+    let totalDailyContracts = 0;
+    let totalDailyResultContracts = 0;
+
+    // Calcular las métricas para cada comercial
+    const metrics = users.map((user) => {
+      const userContracts = groupedContracts[user.id] || {
+        nameComercial: user.firstName + ' ' + user.lastName,
+        numberContracts: 0,
+        amountTotal: 0,
+      };
+
+      totalMonthAmountSold += userContracts.amountTotal; // Sumamos al total general de ventas
+      totalMonthContractsSold += userContracts.numberContracts; // Sumamos al total general de contratos
+
+      // Calcular la meta diaria en euros
+      const dailyAmountGoal = Math.floor(
+        sharedMonthlyGoal / monthGoalsData.days_in_month,
+      );
+
+      // Calcular la meta diaria en contratos
+      const dailyContractsGoal = Math.floor(
+        sharedContractsGoal / monthGoalsData.days_in_month,
+      );
+
+      // Calcular los días laborales hasta hoy
+      const daysPassed = this.calculateWorkingDaysUntilToday(today, holidays);
+
+      // Calcular lo que debería haber vendido hasta hoy
+      const accumulatedAmountGoal = -(daysPassed * dailyAmountGoal);
+
+      // Calcular el número de contratos que debería haber cerrado hasta hoy
+      const accumulatedContractsGoal = -(daysPassed * dailyContractsGoal);
+
+      // Calcular lo que ha vendido el comercial hoy
+      const dailyAmount = todayContracts
+        .filter((contract) => contract.user.id === user.id)
+        .reduce((sum, contract) => sum + contract.coursePrice, 0);
+
+      // Calcular los contratos que ha cerrado el comercial hoy
+      const dailyContracts = todayContracts.filter(
+        (contract) => contract.user.id === user.id,
+      ).length;
+
+      // Calcular la diferencia en ventas acumuladas
+      const resultAmount = accumulatedAmountGoal + userContracts.amountTotal;
+
+      // Calcular la diferencia en contratos acumulados
+      const resultContracts =
+        accumulatedContractsGoal + userContracts.numberContracts;
+
+      // Acumular los totales diarios
+      totalDailyAmountGoal += dailyAmountGoal;
+      totalDailyAmount += dailyAmount;
+      totalDailyResultAmount += resultAmount;
+      totalDailyContractsGoal += dailyContractsGoal;
+      totalDailyContracts += dailyContracts;
+      totalDailyResultContracts += resultContracts;
+
+      return {
+        nameComercial: userContracts.nameComercial,
+        dailyAmountGoal,
+        dailyContractsGoal,
+        dailyAmount, // Ventas realizadas hoy
+        dailyContracts, // Contratos cerrados hoy
+        resultAmount,
+        resultContracts,
+        monthAmount: userContracts.amountTotal,
+        monthContracts: userContracts.numberContracts,
+      };
+    });
+
+    // Ordenar las métricas por monthAmount de mayor a menor
+    metrics.sort((a, b) => b.monthAmount - a.monthAmount);
+
+    // Devolver la respuesta con las métricas, el total de ventas y los objetivos
+    return {
+      today: today.toISOString().split('T')[0],
+      metrics,
+      total: {
+        totalMonthAmountSold,
+        totalMonthContractsSold,
+        totalDailyAmountGoal,
+        totalDailyAmount,
+        totalDailyResultAmount,
+        totalDailyContractsGoal,
+        totalDailyContracts,
+        totalDailyResultContracts,
+      },
+    };
+  }
+
+  // Función para calcular los días laborales hasta hoy (descontando los días festivos)
+  calculateWorkingDaysUntilToday(today: Date, holidays: string[]): number {
+    holidays = holidays || []; // Asegurarse de que holidays no sea null
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    let workingDays = 0;
+
+    // Iterar desde el 1 hasta el día de hoy
+    for (let day = startOfMonth; day <= today; day.setDate(day.getDate() + 1)) {
+      const formattedDate = day.toISOString().split('T')[0];
+
+      // Solo contar como día laborable si el día no está en los feriados
+      if (!holidays.includes(formattedDate)) {
+        workingDays++;
+      }
+    }
+
+    return workingDays;
   }
 }
