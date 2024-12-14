@@ -186,7 +186,7 @@ export class DashboardService {
     const todayFormatted = today.toISOString().split('T')[0]; // Formato YYYY-MM-DD
     if (holidays.includes(todayFormatted)) {
       throw new BadRequestException(
-        "It's a non-working day, therefore no data available.",
+        `${todayFormatted}. Es un día no laborable, por lo tanto no hay datos disponibles.`,
       );
     }
 
