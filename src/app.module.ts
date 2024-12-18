@@ -10,6 +10,7 @@ import { DataSourceConfig } from './config/data-source.config';
 import { EmailModule } from './modules/email/email.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { GoalsModule } from './modules/goals/goals.module';
+import { CouponsModule } from './modules/coupons/coupons.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { GoalsModule } from './modules/goals/goals.module';
     EmailModule,
     DashboardModule,
     GoalsModule,
+    CouponsModule,
   ],
   controllers: [],
   providers: [],
