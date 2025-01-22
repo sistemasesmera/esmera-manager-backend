@@ -158,6 +158,18 @@ export class UsersService {
       },
     }); // Este método traerá todos los usuarios activos de la base de datos
 
+    // Temporalmente desactivamos a tatiana
+
+    const tatiana = users.find(
+      (user) => user.email === 'tatiana@esmeraschool.com',
+    );
+
+    // ahora sacamos a tatiana del array
+
+    if (tatiana) {
+      users.splice(users.indexOf(tatiana), 1);
+    }
+
     return users;
   }
   async updateUser(
