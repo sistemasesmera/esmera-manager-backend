@@ -15,17 +15,11 @@ export class WebhookController {
     const nameLead = request.body.fname;
     const phoneLead = request.body.phone;
     const emailLead = request.body.email;
-    const campaignLead = request.body.list_name;
 
-    console.log({ nameLead, phoneLead, emailLead, campaignLead });
+    console.log({ nameLead, phoneLead, emailLead });
 
     // Llamar a Monday para crear un nuevo elemento
-    const newItem = await this.createMondayItem(
-      nameLead,
-      phoneLead,
-      emailLead,
-      campaignLead,
-    );
+    const newItem = await this.createMondayItem(nameLead, phoneLead, emailLead);
 
     return {
       message: 'Webhook received and data sent to Monday',
@@ -33,12 +27,7 @@ export class WebhookController {
     };
   }
 
-  private async createMondayItem(
-    name: string,
-    phone: string,
-    email: string,
-    campaign: string,
-  ) {
+  private async createMondayItem(name: string, phone: string, email: string) {
     const query = `
       mutation {
         create_item (
@@ -46,8 +35,8 @@ export class WebhookController {
           item_name: "${name}", 
           column_values: "{ 
             \\"tel_fono_mkkdc9jb\\": \\"${phone}\\",
-            \\"correo_electr_nico_mkkdnhzy\\": \\"${email}\\",
-        \\\"estado_mkkddsry\\\": { \\\"label\\\": \\\"${campaign}\\\"
+            \\"email_mkmtz198\\": \\"${email}\\",
+            \\"estado_mkkddsry\\": {\\"label\\": \\"MAQ-PELUQ-EMBUDO\\"}
           }"
         ) {
           id
