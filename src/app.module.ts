@@ -11,11 +11,12 @@ import { EmailModule } from './modules/email/email.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { GoalsModule } from './modules/goals/goals.module';
 import { CouponsModule } from './modules/coupons/coupons.module';
+import { WebhookModule } from './modules/webhook/webhook.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      envFilePath: '.env', // Archivo de configuración
+      envFilePath: '.env',
       isGlobal: true,
     }),
     TypeOrmModule.forRoot({ ...DataSourceConfig }),
@@ -29,6 +30,7 @@ import { CouponsModule } from './modules/coupons/coupons.module';
     DashboardModule,
     GoalsModule,
     CouponsModule,
+    WebhookModule,
   ],
   controllers: [],
   providers: [],
