@@ -161,7 +161,7 @@ export class UsersService {
     // Temporalmente desactivamos a tatiana
 
     const tatiana = users.find(
-      (user) => user.email === 'ejemplo@esmeraschool.com',
+      (user) => user.email === 'lauradiaz@esmeraschool.com',
     );
 
     // ahora sacamos a tatiana del array
