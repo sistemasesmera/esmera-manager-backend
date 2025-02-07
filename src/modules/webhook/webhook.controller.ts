@@ -36,7 +36,7 @@ export class WebhookController {
           column_values: "{ 
             \\"tel_fono_mkkdc9jb\\": \\"${phone}\\",
             \\"email_mkmtz198\\": \\"${email}\\",
-            \\"estado_mkkddsry\\": {\\"label\\": \\"MAQ-PELUQ-EMBUDO\\"}
+            \\"telefono_mkmy847z\\": {\\"label\\": \\"MAQ-PELUQ-EMBUDO\\"}
           }"
         ) {
           id
