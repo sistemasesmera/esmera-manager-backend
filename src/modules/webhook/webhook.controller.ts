@@ -34,9 +34,9 @@ export class WebhookController {
           board_id: ${this.boardId}, 
           item_name: "${name}", 
           column_values: "{ 
-            \\"tel_fono_mkkdc9jb\\": \\"${phone}\\",
+            \\"telefono_mkmy847z\\": \\"${phone}\\",
             \\"email_mkmtz198\\": \\"${email}\\",
-            \\"telefono_mkmy847z\\": {\\"label\\": \\"MAQ-PELUQ-EMBUDO\\"}
+            \\"estado_mkkddsry\\": {\\"label\\": \\"MAQ-PELUQ-EMBUDO\\"}
           }"
         ) {
           id
