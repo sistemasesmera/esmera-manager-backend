@@ -11,10 +11,12 @@ export class WebhookController {
   async test(@Request() request, @Body() body) {
     console.log('Headers:', request.headers);
     console.log('Body:', body);
-
     const nameLead = request.body.fname;
-    const phoneLead = request.body.phone;
+    const phoneLeadfCleanner = request.body.phone;
     const emailLead = request.body.email;
+
+    // Normalizar el número de teléfono
+    const phoneLead = phoneLeadfCleanner.replace(/\D/g, ''); // Elimina todo lo que no sea un dígito
 
     console.log({ nameLead, phoneLead, emailLead });
 
