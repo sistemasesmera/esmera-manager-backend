@@ -1,5 +1,6 @@
 import { Controller, Post, Request, Body } from '@nestjs/common';
 import axios from 'axios';
+import { error } from 'console';
 
 @Controller('webhook')
 export class WebhookController {
@@ -30,6 +31,14 @@ export class WebhookController {
   }
 
   private async createMondayItem(name: string, phone: string, email: string) {
+    console.log(name);
+    console.log(phone);
+    console.log(email);
+
+    console.log(typeof name);
+    console.log(typeof phone);
+    console.log(typeof email);
+    console.log('- - - - - - - -  - - ');
     const query = `
       mutation {
         create_item (
@@ -61,6 +70,7 @@ export class WebhookController {
       console.log('Monday API Response:', response.data);
       return response.data;
     } catch (error) {
+      console.log(error);
       console.error(
         'Error creating item in Monday:',
         error.response?.data || error.message,

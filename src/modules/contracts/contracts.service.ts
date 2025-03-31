@@ -147,7 +147,6 @@ export class ContractsService {
     }
 
     const [contracts, total] = await queryBuilder.getManyAndCount();
-
     return {
       data: contracts,
       count: total,
