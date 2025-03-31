@@ -1,6 +1,5 @@
-import { Controller, Post, Request, Body } from '@nestjs/common';
+import { Controller, Post, Request, Body, Get } from '@nestjs/common';
 import axios from 'axios';
-import { error } from 'console';
 
 @Controller('webhook')
 export class WebhookController {
@@ -30,6 +29,23 @@ export class WebhookController {
     };
   }
 
+  @Get('test')
+  async sendVerificationCode(@Body() test: any) {
+    console.log(test);
+
+    // Llamar a Monday para crear un nuevo elemento
+    const newItem = await this.createMondayItem(
+      test.name,
+      test.phone,
+      test.email,
+    );
+
+    return {
+      message: 'Webhook received and data sent to Monday',
+      mondayResponse: newItem,
+    };
+  }
+
   private async createMondayItem(name: string, phone: string, email: string) {
     console.log(name);
     console.log(phone);
@@ -39,16 +55,18 @@ export class WebhookController {
     console.log(typeof phone);
     console.log(typeof email);
     console.log('- - - - - - - -  - - ');
+    const columnValues = JSON.stringify({
+      telefono_mkmydsv5: phone,
+      email_mkmtz198: email,
+      estado_mkkddsry: { label: 'MAQ-PELUQ-EMBUDO' },
+    });
+
     const query = `
       mutation {
         create_item (
           board_id: ${this.boardId}, 
           item_name: "${name}", 
-          column_values: "{ 
-            \\"telefono_mkmydsv5\\": \\"${phone}\\",
-            \\"email_mkmtz198\\": \\"${email}\\",
-            \\"estado_mkkddsry\\": {\\"label\\": \\"MAQ-PELUQ-EMBUDO\\"}
-          }"
+          column_values: "${columnValues.replace(/"/g, '\\"')}"
         ) {
           id
         }
