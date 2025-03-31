@@ -1,11 +1,14 @@
 import { Controller, Post, Request, Body, Get } from '@nestjs/common';
 import axios from 'axios';
+import { EmailService } from '../email/email.service';
 
 @Controller('webhook')
 export class WebhookController {
   private mondayApiKey =
     'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjMyOTM2NDAwNywiYWFpIjoxMSwidWlkIjoyMjc4MDczOCwiaWFkIjoiMjAyNC0wMy0wNlQxMTo0ODowMi4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6OTI2NzAyMSwicmduIjoidXNlMSJ9.LUVRzuV-inO6CRETAgBi1Pc9Df-OGJ45IqsaSB4uG_Y'; // Reemplaza con tu API Key
   private boardId = 8384546919;
+
+  constructor(private readonly emailService: EmailService) {}
 
   @Post('/builderall-embudo-maquillaje-peluqueria')
   async test(@Request() request, @Body() body) {
@@ -31,8 +34,6 @@ export class WebhookController {
 
   @Get('test')
   async sendVerificationCode(@Body() test: any) {
-    console.log(test);
-
     // Llamar a Monday para crear un nuevo elemento
     const newItem = await this.createMondayItem(
       test.name,
@@ -47,14 +48,6 @@ export class WebhookController {
   }
 
   private async createMondayItem(name: string, phone: string, email: string) {
-    console.log(name);
-    console.log(phone);
-    console.log(email);
-
-    console.log(typeof name);
-    console.log(typeof phone);
-    console.log(typeof email);
-    console.log('- - - - - - - -  - - ');
     const columnValues = JSON.stringify({
       telefono_mkmydsv5: phone,
       email_mkmtz198: email,
@@ -85,13 +78,17 @@ export class WebhookController {
         },
       );
 
-      console.log('Monday API Response:', response.data);
       return response.data;
     } catch (error) {
-      console.log(error);
-      console.error(
-        'Error creating item in Monday:',
-        error.response?.data || error.message,
+      await this.emailService.sendEmail(
+        'sistemas@esmeraschool.com',
+        'Error con la integracion del monday',
+        `Hubo un error al crear un ítem en Monday. Detalles: ${JSON.stringify(error.response?.data || error.message)}`,
+      );
+      await this.emailService.sendEmail(
+        'maurosoto100@gmail.com',
+        'Error con la integracion del monday',
+        `Hubo un error al crear un ítem en Monday. Detalles: ${JSON.stringify(error.response?.data || error.message)}`,
       );
       return { error: error.message };
     }
