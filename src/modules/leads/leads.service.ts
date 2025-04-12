@@ -68,7 +68,9 @@ export class LeadsService {
     await this.createInMonday(createLeadDto);
     this.sendEmails(createLeadDto);
 
-    return true;
+    return {
+      message: 'ok',
+    };
   }
 
   private async sendEmails(dto: CreateLeadDto) {
