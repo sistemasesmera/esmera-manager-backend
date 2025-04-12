@@ -18,7 +18,7 @@ async function bootstrap() {
   app.use(bodyParser.json());
 
   //Configurar morgan para registrar las peticiones http
-  app.use(morgan('dev')); // Puedes usar 'dev', 'combined', o configurar un formato personalizado
+  app.use(morgan('combined')); // Puedes usar 'dev', 'combined', o configurar un formato personalizado
 
   app.useGlobalPipes(
     new ValidationPipe({
