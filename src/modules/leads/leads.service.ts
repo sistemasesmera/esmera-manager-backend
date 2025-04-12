@@ -68,7 +68,7 @@ export class LeadsService {
     await this.createInMonday(createLeadDto);
     this.sendEmails(createLeadDto);
 
-    return 'This action adds a new lead';
+    return true;
   }
 
   private async sendEmails(dto: CreateLeadDto) {
