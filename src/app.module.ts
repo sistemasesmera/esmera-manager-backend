@@ -12,6 +12,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { GoalsModule } from './modules/goals/goals.module';
 import { CouponsModule } from './modules/coupons/coupons.module';
 import { WebhookModule } from './modules/webhook/webhook.module';
+import { LeadsModule } from './modules/leads/leads.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { WebhookModule } from './modules/webhook/webhook.module';
     GoalsModule,
     CouponsModule,
     WebhookModule,
+    LeadsModule,
   ],
   controllers: [],
   providers: [],
