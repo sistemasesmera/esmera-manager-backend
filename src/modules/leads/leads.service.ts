@@ -74,20 +74,16 @@ export class LeadsService {
   private async sendEmails(dto: CreateLeadDto) {
     const { name, phone, email, nameCourse } = dto;
 
-    const textoInterno = nameCourse
-      ? `${name} ha mostrado interés en el curso ${nameCourse}.\nTel: ${phone}\nEmail: ${email || 'No proporcionado'}`
-      : `${name} ha solicitado contacto o información general.\nTel: ${phone}\nEmail: ${email || 'No proporcionado'}`;
-
     // a) Correo para el lead (si dejó email)
     if (email) {
-      await this.emailService.sendEmail(email, 'Gracias', 'Gracias subject');
+      await this.emailService.sendLeadThankYouEmail(email, name, nameCourse);
     }
 
-    // b) Correos internos
-    const internos = ['sistemas@esmeraschool.com', 'lol@esmeraschool'];
-
-    for (const to of internos) {
-      await this.emailService.sendEmail(to, 'Nuevo LEAD', textoInterno);
-    }
+    await this.emailService.sendNewLeadNotificationToAdmin(
+      name,
+      phone,
+      email,
+      nameCourse,
+    );
   }
 }

@@ -156,4 +156,153 @@ export class EmailService {
       }
     }
   }
+
+  async sendLeadThankYouEmail(
+    email: string,
+    name: string,
+    nameCourse?: string,
+  ): Promise<void> {
+    try {
+      // Definir el asunto y el cuerpo del correo dependiendo de si el curso está especificado
+      const subject = 'Gracias por tu interés en nuestros cursos';
+      const body = nameCourse
+        ? `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+            <!-- Logo y Encabezado -->
+            <div style="text-align: center; padding: 20px;">
+              <img src="https://www.esmeraschool.com/cdn/shop/files/4_1_88f724f6-e7d0-4b83-ad30-adc974fad44f.png?v=1706281740&width=195" alt="Esmera School Logo" style="width: 120px; margin-bottom: 10px;" />
+              <h2 style="color: #006eae; font-size: 24px; margin-bottom: 5px;">Esmera School</h2>
+              <p style="color: #379545; font-size: 18px; margin: 0;">Gracias por tu interés en nuestro curso</p>
+            </div>
+
+            <!-- Mensaje al estudiante -->
+            <p style="font-size: 16px; color: #333;">Estimado/a ${name},</p>
+            <p style="font-size: 16px; color: #333;">Gracias por tu interés en nuestro curso: ${nameCourse}.</p>
+            <p style="font-size: 16px; color: #333;">Un Asesor Educativo se contactará contigo pronto para proporcionarte toda la información que necesitas y ayudarte a tomar la mejor decisión.</p>
+            <p style="font-size: 16px; color: #333;">Si tienes alguna duda o inquietud, no dudes en ponerte en contacto con nosotros.</p>
+            
+            <!-- Botón de CTA -->
+            <div style="text-align: center; margin-top: 30px;">
+              <a href="https://esmeraschool.com" style="text-decoration: none; color: white; background-color: #379545; padding: 10px 20px; border-radius: 4px; font-size: 16px;">
+                Ir a Esmera School
+              </a>
+            </div>
+
+            <!-- Pie de página -->
+            <p style="font-size: 16px; color: #333; text-align: center; margin-top: 30px;">
+              ¡Estamos emocionados de acompañarte en este camino de aprendizaje!
+            </p>
+            <p style="font-size: 12px; color: #999; text-align: center; margin-top: 10px;">
+              &copy; ${new Date().getFullYear()} Esmera School. Todos los derechos reservados.
+            </p>
+          </div>
+        `
+        : `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+            <!-- Logo y Encabezado -->
+            <div style="text-align: center; padding: 20px;">
+              <img src="https://www.esmeraschool.com/cdn/shop/files/4_1_88f724f6-e7d0-4b83-ad30-adc974fad44f.png?v=1706281740&width=195" alt="Esmera School Logo" style="width: 120px; margin-bottom: 10px;" />
+              <h2 style="color: #006eae; font-size: 24px; margin-bottom: 5px;">Esmera School</h2>
+              <p style="color: #379545; font-size: 18px; margin: 0;">Gracias por tu interés en recibir más información</p>
+            </div>
+
+            <!-- Mensaje al estudiante -->
+            <p style="font-size: 16px; color: #333;">Estimado/a ${name},</p>
+            <p style="font-size: 16px; color: #333;">Gracias por tu interés en recibir más información sobre nuestros cursos.</p>
+            <p style="font-size: 16px; color: #333;">Un Asesor Educativo se pondrá en contacto contigo pronto para proporcionarte toda la información que necesitas y ayudarte a elegir el curso adecuado.</p>
+            <p style="font-size: 16px; color: #333;">Si tienes alguna pregunta, no dudes en ponerte en contacto con nosotros.</p>
+
+            <!-- Botón de CTA -->
+            <div style="text-align: center; margin-top: 30px;">
+              <a href="https://esmeraschool.com" style="text-decoration: none; color: white; background-color: #379545; padding: 10px 20px; border-radius: 4px; font-size: 16px;">
+                Ir a Esmera School
+              </a>
+            </div>
+
+            <!-- Pie de página -->
+            <p style="font-size: 16px; color: #333; text-align: center; margin-top: 30px;">
+              ¡Estamos aquí para ayudarte a dar el siguiente paso en tu formación!
+            </p>
+            <p style="font-size: 12px; color: #999; text-align: center; margin-top: 10px;">
+              &copy; ${new Date().getFullYear()} Esmera School. Todos los derechos reservados.
+            </p>
+          </div>
+        `;
+
+      // Enviar el correo
+      await sgMail.send({
+        to: email,
+        from: this.configService.get<string>('FROM_EMAIL'),
+        subject,
+        html: body,
+      });
+
+      console.log('Email enviado exitosamente a: ' + email);
+    } catch (error) {
+      console.error('Error al enviar el email', error);
+      if (error.response) {
+        console.error(error.response.body);
+      }
+    }
+  }
+
+  async sendNewLeadNotificationToAdmin(
+    name: string,
+    phone: string,
+    email: string,
+    nameCourse?: string,
+  ): Promise<void> {
+    try {
+      // Definir el asunto del correo
+      const subject = '¡Nuevo Lead Proveniente de la WEB!';
+
+      // Cuerpo del correo para los administradores
+      const body = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+          <!-- Logo y Encabezado -->
+          <div style="text-align: center; padding: 20px;">
+            <img src="https://www.esmeraschool.com/cdn/shop/files/4_1_88f724f6-e7d0-4b83-ad30-adc974fad44f.png?v=1706281740&width=195" alt="Esmera School Logo" style="width: 120px; margin-bottom: 10px;" />
+            <h2 style="color: #006eae; font-size: 24px; margin-bottom: 5px;">Esmera School</h2>
+            <p style="color: #379545; font-size: 18px; margin: 0;">Nuevo Lead desde la Web</p>
+          </div>
+
+          <!-- Detalles del lead -->
+          <p style="font-size: 16px; color: #333;">¡Tenemos un nuevo lead!</p>
+          <p style="font-size: 16px; color: #333;"><strong>Nombre:</strong> ${name}</p>
+          <p style="font-size: 16px; color: #333;"><strong>Teléfono:</strong> ${phone}</p>
+          <p style="font-size: 16px; color: #333;"><strong>Email:</strong> ${email ? email : 'Email no especificado'}</p>
+          <p style="font-size: 16px; color: #333;"><strong>Curso:</strong> ${nameCourse || 'No especificado'}</p>
+
+          <!-- Pie de página -->
+          <p style="font-size: 16px; color: #333; text-align: center; margin-top: 30px;">
+            Este es un aviso automático, por favor, proceda a contactar al lead.
+          </p>
+          <p style="font-size: 12px; color: #999; text-align: center; margin-top: 10px;">
+            &copy; ${new Date().getFullYear()} Esmera School. Todos los derechos reservados.
+          </p>
+        </div>
+      `;
+
+      // Enviar el correo a los administradores
+      const adminEmails = ['sistemas@esmeraschool.com']; // Cambiar con las direcciones reales de los administradores
+      for (const adminEmail of adminEmails) {
+        await sgMail.send({
+          to: adminEmail,
+          from: this.configService.get<string>('FROM_EMAIL'),
+          subject,
+          html: body,
+        });
+      }
+
+      console.log(
+        'Email enviado exitosamente a los administradores: ' +
+          adminEmails.join(', '),
+      );
+    } catch (error) {
+      console.error('Error al enviar el email', error);
+      if (error.response) {
+        console.error(error.response.body);
+      }
+    }
+  }
 }
