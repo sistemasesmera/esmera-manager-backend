@@ -77,9 +77,9 @@ export class LeadsService {
     const { name, phone, email, nameCourse } = dto;
 
     // a) Correo para el lead (si dejó email)
-    if (email) {
-      await this.emailService.sendLeadThankYouEmail(email, name, nameCourse);
-    }
+    // if (email) {
+    //   await this.emailService.sendLeadThankYouEmail(email, name, nameCourse);
+    // }
 
     await this.emailService.sendNewLeadNotificationToAdmin(
       name,

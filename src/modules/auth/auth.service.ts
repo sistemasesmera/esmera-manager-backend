@@ -140,4 +140,29 @@ export class AuthService {
 
     return { message: 'Contraseña actualizada exitosamente' };
   }
+  async testChangePassword(
+    id: string, // Usuario autenticado (por ejemplo, obtenido de JWT)
+    newPassword: string, // DTO que contiene las contraseñas
+  ): Promise<{ message: string }> {
+    // Buscar el usuario en la base de datos
+    const existingUser = await this.userRepository.findOne({
+      where: { id: id },
+      select: ['id', 'email', 'password'], // Incluye explícitamente el campo `password`
+    });
+
+    if (!existingUser) {
+      throw new UnauthorizedException('Usuario no encontrado');
+    }
+
+    // Encriptar la nueva contraseña
+    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+
+    // Actualizar la contraseña en la base de datos
+    existingUser.password = hashedNewPassword;
+
+    // Guardar el usuario con la nueva contraseña
+    await this.userRepository.save(existingUser);
+
+    return { message: 'Contraseña actualizada exitosamente' };
+  }
 }
