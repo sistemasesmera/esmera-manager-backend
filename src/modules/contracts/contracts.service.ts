@@ -29,9 +29,11 @@ export class ContractsService {
 
   async create(createContractDto: CreateContractDto, user: AuthenticatedUser) {
     // Validación de usuario (comercial o comercial-plus)
-    const userFound = await this.userRepository.findOneBy({
-      id: user.id,
+    const userFound = await this.userRepository.findOne({
+      where: { id: user.id },
+      relations: ['branch'], // Esto carga la sede (branch) del user
     });
+
     if (!userFound) {
       throw new NotFoundException(`User with id ${user.id} not found`);
     }
@@ -62,6 +64,7 @@ export class ContractsService {
     // Crear una nueva instancia de contrato
     const contract = this.contractRepository.create({
       user, // Relación con el comercial
+      branch: userFound.branch, // le asignamos la sede de su creador
       alumn, // Relación con el alumno
       course, // Relación con el curso
       coursePrice: parseInt(createContractDto.coursePrice), // Precio del curso
@@ -125,6 +128,7 @@ export class ContractsService {
     const queryBuilder = this.contractRepository
       .createQueryBuilder('contract')
       .leftJoinAndSelect('contract.alumn', 'alumn')
+      .leftJoinAndSelect('contract.branch', 'branch')
       .leftJoinAndSelect('contract.course', 'course')
       .leftJoinAndSelect('contract.user', 'user')
       .where('contract.userId = :userId', { userId })
