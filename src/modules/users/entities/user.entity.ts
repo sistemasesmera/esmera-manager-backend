@@ -6,11 +6,14 @@ import {
   UpdateDateColumn,
   BaseEntity,
   OneToMany,
+  JoinColumn,
+  ManyToOne,
 } from 'typeorm';
 import { IsEmail, IsEnum } from 'class-validator';
 import { Exclude } from 'class-transformer';
 import { UserRoles } from '../../../constants/Roles.enum';
 import { Contract } from '../../contracts/entities/contract.entity';
+import { Branch } from '../../branch/entities/branch.entity';
 
 @Entity('users')
 export class User extends BaseEntity {
@@ -47,4 +50,11 @@ export class User extends BaseEntity {
 
   @OneToMany(() => Contract, (contract) => contract.user)
   contracts: Contract[];
+
+  @ManyToOne(() => Branch, (branch) => branch.users, {
+    nullable: true,
+    eager: true,
+  })
+  @JoinColumn({ name: 'branch_id' })
+  branch: Branch;
 }

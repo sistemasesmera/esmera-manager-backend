@@ -88,3 +88,8 @@ Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
 Create Migration (Windows) = npm run migration:create --name=CreateTableUsers
 
 Create Migration (Unix) = npm run migration:create:unix --name=CreateTableUsers
+
+Para las migraciones
+1. Crearla. npm run migration:create --Name= (Nombre)
+1. Cambiar el nombre de el comando de npm run migratiom:generate y luego ejecutarlo
+1. subir npm run migratiom:run 

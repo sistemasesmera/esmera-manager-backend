@@ -13,6 +13,7 @@ import { GoalsModule } from './modules/goals/goals.module';
 import { CouponsModule } from './modules/coupons/coupons.module';
 import { WebhookModule } from './modules/webhook/webhook.module';
 import { LeadsModule } from './modules/leads/leads.module';
+import { BranchModule } from './modules/branch/branch.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { LeadsModule } from './modules/leads/leads.module';
     CouponsModule,
     WebhookModule,
     LeadsModule,
+    BranchModule,
   ],
   controllers: [],
   providers: [],

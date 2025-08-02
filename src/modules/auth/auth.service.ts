@@ -68,6 +68,11 @@ export class AuthService {
       email: user.email,
       role: user.role,
       id: user.id,
+      branch: {
+        id: user.branch.id,
+        name: user.branch.name,
+        address: user.branch.address,
+      },
     };
     const accessToken = this.jwtService.sign(payload);
     return {
@@ -79,6 +84,7 @@ export class AuthService {
   async validateUser(email: string, password: string): Promise<User | null> {
     const user = await this.userRepository.findOne({
       where: { email },
+      relations: ['branch'], // esto es lo importante
       select: [
         'id',
         'email',

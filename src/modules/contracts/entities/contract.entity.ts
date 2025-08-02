@@ -5,12 +5,14 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Column,
+  JoinColumn,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { Alumn } from '../../alumn/entities/alumn.entity';
 import { IsEnum } from 'class-validator';
 import { DocumentType } from '../../../constants/document-type.enum';
 import { Course } from '../../courses/entities/course.entity';
+import { Branch } from '../../branch/entities/branch.entity';
 
 @Entity()
 export class Contract {
@@ -149,4 +151,11 @@ export class Contract {
   // Fecha de actualizacion del contrato (Para fines de base de datos)
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
+
+  @ManyToOne(() => Branch, (branch) => branch.contracts, {
+    nullable: true,
+    eager: true,
+  })
+  @JoinColumn({ name: 'branch_id' })
+  branch: Branch;
 }

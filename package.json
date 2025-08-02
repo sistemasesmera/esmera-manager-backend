@@ -24,7 +24,7 @@
     "schema:drop": "npx typeorm-ts-node-commonjs -d ./src/config/data-source.config.ts",
     "migration:create": "typeorm migration:create ./src/migrations/%npm_config_name%",
     "migration:create:unix": "typeorm migration:create ./src/migrations/$npm_config_name",
-    "migration:generate": "cross-env NODE_ENV=production npx typeorm-ts-node-commonjs migration:generate ./src/migrations/CreateCampaignAndCouponTables -d ./src/config/data-source.config.ts",
+    "migration:generate": "cross-env NODE_ENV=production npx typeorm-ts-node-commonjs migration:generate ./src/migrations/AddJoinColumnInContractEntity -d ./src/config/data-source.config.ts",
     "migration:show": "npx typeorm-ts-node-commonjs migration:show -d ./src/config/data-source.config.ts",
     "migration:run": "cross-env NODE_ENV=production npx typeorm-ts-node-commonjs migration:run -d ./src/config/data-source.config.ts",
     "migration:revert": "npx typeorm-ts-node-commonjs migration:revert -d ./src/config/data-source.config.ts"
