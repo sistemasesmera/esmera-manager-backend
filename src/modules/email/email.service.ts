@@ -284,7 +284,10 @@ export class EmailService {
       `;
 
       // Enviar el correo a los administradores
-      const adminEmails = ['sistemas@esmeraschool.com']; // Cambiar con las direcciones reales de los administradores
+      const adminEmails = [
+        'sistemas@esmeraschool.com',
+        'admin@esmeraschool.com',
+      ]; // Cambiar con las direcciones reales de los administradores
       for (const adminEmail of adminEmails) {
         await sgMail.send({
           to: adminEmail,
