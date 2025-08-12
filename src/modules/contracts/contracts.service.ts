@@ -48,9 +48,6 @@ export class ContractsService {
       );
     }
 
-    if (!alumn.isVerified) {
-      throw new BadRequestException(`Alumn not verified`);
-    }
     // Validación de curso
     const course = await this.courseRepository.findOneBy({
       id: createContractDto.courseId,
