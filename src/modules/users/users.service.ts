@@ -156,19 +156,8 @@ export class UsersService {
         active: true,
         role: In([UserRoles.COMMERCIAL, UserRoles.COMMERCIAL_PLUS]), // Filtrar por múltiples roles
       },
+      relations: ['branch'],
     }); // Este método traerá todos los usuarios activos de la base de datos
-
-    // Temporalmente desactivamos a tatiana
-
-    const tatiana = users.find(
-      (user) => user.email === 'lauradiaz@esmeraschool.com',
-    );
-
-    // ahora sacamos a tatiana del array
-
-    if (tatiana) {
-      users.splice(users.indexOf(tatiana), 1);
-    }
 
     return users;
   }

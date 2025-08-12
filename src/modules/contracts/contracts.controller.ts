@@ -6,7 +6,6 @@ import {
   Get,
   Query,
   ValidationPipe,
-  UnauthorizedException,
   BadRequestException,
 } from '@nestjs/common';
 import { ContractsService } from './contracts.service';

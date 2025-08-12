@@ -18,11 +18,7 @@ export class FilterAlumnDto {
 
   @IsOptional()
   @IsString()
-  name?: string;
-
-  @IsOptional()
-  @IsString()
-  email?: string;
+  search?: string;
 
   @IsOptional()
   @IsEnum(DocumentType)

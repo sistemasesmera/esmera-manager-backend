@@ -69,48 +69,47 @@ export class AlumnService {
   }
 
   async findAll(filterAlumnDto: FilterAlumnDto) {
-    const { name, email, documentType, documentNumber, page, limit } =
+    const { search, documentType, documentNumber, page, limit } =
       filterAlumnDto;
 
     const queryBuilder = this.alumnRepository.createQueryBuilder('alumn');
 
-    // Application search query parameters
-    if (name) {
-      queryBuilder.andWhere('alumn.firstName ILIKE :name', {
-        name: `%${name}%`,
-      });
+    // Búsqueda en nombre o email
+    if (search) {
+      queryBuilder.andWhere(
+        '(alumn.firstName ILIKE :search OR alumn.email ILIKE :search)',
+        { search: `%${search}%` },
+      );
     }
-    if (email) {
-      queryBuilder.andWhere('alumn.email ILIKE :email', {
-        email: `%${email}%`,
-      });
-    }
+
+    // Filtrar por tipo de documento
     if (documentType) {
       queryBuilder.andWhere('alumn.documentType = :documentType', {
         documentType,
       });
     }
+
+    // Filtrar por número de documento
     if (documentNumber) {
       queryBuilder.andWhere('alumn.documentNumber ILIKE :documentNumber', {
         documentNumber: `%${documentNumber}%`,
       });
     }
-
-    // Agregar ordenamiento por fecha de creación (createdAt) en orden descendente
+    // Ordenar por fecha de creación
     queryBuilder.orderBy('alumn.createdAt', 'DESC');
 
-    // Paginate results
+    // Paginación
     const [result, total] = await queryBuilder
-      .skip((page - 1) * limit) // Salto de registros
-      .take(limit) // Número de registros a tomar
-      .getManyAndCount(); // Obtén los resultados y el total
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
 
     return {
-      count: total, // Total de registros encontrados
-      page, // Página actual
-      limit, // Límite por página
-      data: result, // Datos de la página actual
-      totalPages: Math.ceil(total / limit), // Total de páginas calculadas a partir del total de registros
+      count: total,
+      page,
+      limit,
+      data: result,
+      totalPages: Math.ceil(total / limit),
     };
   }
 

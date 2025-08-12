@@ -78,6 +78,7 @@ export class DashboardService {
           nameComercial: contract.user.firstName + ' ' + contract.user.lastName,
           numberContracts: 0,
           amountTotal: 0,
+          branch: contract.user.branch,
         };
       }
       acc[userId].numberContracts += 1;
@@ -106,6 +107,7 @@ export class DashboardService {
         nameComercial: user.firstName + ' ' + user.lastName,
         numberContracts: 0,
         amountTotal: 0,
+        branch: user.branch,
       };
 
       totalAmountSold += userContracts.amountTotal; // Sumamos al total general de ventas
@@ -124,10 +126,12 @@ export class DashboardService {
         commonGoalPersonalContracts - userContracts.numberContracts,
       );
 
+      console.log(`${user.firstName} + ${user.branch.name}`);
       return {
         nameComercial: userContracts.nameComercial,
         numberContracts: userContracts.numberContracts,
         amountTotal: userContracts.amountTotal,
+        branch: userContracts.branch,
         commonGoalPersonalAmount, // Objetivo personal de montos para cada comercial
         commonGoalRemainingAmount, // Objetivo restante de montos para cada comercial
         commonGoalPersonalContracts, // Objetivo personal de contratos para cada comercial
