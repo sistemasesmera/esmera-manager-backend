@@ -18,9 +18,19 @@ export class CreateLeadDto {
 
   @IsOptional()
   @IsString()
-  @IsIn(['ESTETICA', 'PELUQUERIA', 'MAQUILLAJE', 'BARBERIA', 'UÑAS'], {
-    message:
-      'La categoría del curso debe ser una de las siguientes opciones: Estetica, Peluqueria, Maquillaje, Barberia, Uñas',
-  })
+  @IsIn(
+    [
+      'ESTETICA',
+      'PELUQUERIA',
+      'MAQUILLAJE',
+      'BARBERIA',
+      'UÑAS',
+      'CEJASYPESTANAS',
+    ],
+    {
+      message:
+        'La categoría del curso debe ser una de las siguientes opciones: Estetica, Peluqueria, Maquillaje, Barberia, Uñas',
+    },
+  )
   categoryCourse?: string;
 }
