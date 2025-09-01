@@ -26,11 +26,17 @@ export class CoursesService {
   }
 
   // Método para obtener todos los cursos con paginación
-  async findAllCourses(page: number = 1, limit: number = 10, name?: string) {
+  async findAllCourses(
+    page: number = 1,
+    limit: number = 10,
+    searchTerm?: string,
+  ) {
     const queryBuilder = this.courseRepository.createQueryBuilder('course');
 
-    if (name) {
-      queryBuilder.where('course.name ILIKE :name', { name: `%${name}%` }); // Filtra por nombre
+    if (searchTerm) {
+      queryBuilder.where('course.name ILIKE :name', {
+        name: `%${searchTerm}%`,
+      }); // Filtra por nombre
     }
     queryBuilder.orderBy('course.createdAt', 'DESC');
 

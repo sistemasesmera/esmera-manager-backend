@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -21,11 +22,13 @@ import { CreateCommercialDto } from './dto/create-commercial.dto.';
 import { AuthenticatedUser } from 'src/interfaces/authenticated-user.interface';
 import { UserData } from 'src/decorators/user.decorator';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateCommercialPasswordDto } from './dto/update-commercial.dto';
 
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  //Endpoint para crear un Comercial nuevo (sea comercial o plus)
   @Post('commercials')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS)
@@ -34,18 +37,33 @@ export class UsersController {
   ): Promise<User> {
     return this.usersService.createCommercial(createCommercialDto);
   }
-
+  //Endpoint para traer los comerciales
   @Get('commercials')
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS)
   getCommercials(
     @Query(new ValidationPipe({ transform: true, whitelist: true }))
     paginationDto: PaginationDto,
   ) {
-    const { page, limit, email, active } = paginationDto;
-    return this.usersService.getCommercials(page, limit, email, active);
+    const { page, limit, active, searchTerm } = paginationDto;
+    return this.usersService.getCommercials(page, limit, active, searchTerm);
   }
 
+  @Get('commercials-select')
+  @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS)
+  getCommercialsSelect() {
+    return this.usersService.getCommercialsSelect();
+  }
+  //Endpoint para editar los comerciales
+  @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS)
+  @Patch('commercials/:id')
+  async patchUser(
+    @Param('id') id: string,
+    @Body() partialUpdateDto: Partial<UpdateUserDto>,
+  ) {
+    return this.usersService.updatePartial(id, partialUpdateDto);
+  }
+
+  //Endpoint para activar/desactivar un comercial (solo podra hacerlo comercial y admin)
   @Put('/commercials/:id/activate')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS)
@@ -59,16 +77,28 @@ export class UsersController {
     );
   }
 
-  @Put()
+  //Endpoint para cambiar la contraseña de los comerciales (solo lo podra hacer un usuario admin y un comercial plus)
+
+  @Patch('commercials/:id/password')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS, UserRoles.COMMERCIAL)
-  async updateUser(
-    @Body() updateUserData: UpdateUserDto, // Usa el DTO aquí
-    @UserData() user: AuthenticatedUser, // Usa el decorador para obtener el usuario autenticado
-  ): Promise<User> {
-    return this.usersService.updateUser(updateUserData, user);
+  @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS)
+  async changeCommercialPassword(
+    @Param('id') id: string,
+    @Body(new ValidationPipe()) updatePasswordDto: UpdateCommercialPasswordDto,
+  ) {
+    const { newPassword } = updatePasswordDto;
+    return this.usersService.changeCommercialPassword(id, newPassword);
   }
 
-  //TODO: Falta que el ComercialPlus y Admin puedan editar un comercial
-  //TODO: Falta que el ComercialPlus y Admin puedan cambiarle la contraseña a un comercial
+  //Endpoint para que puedan editar sus datos.
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS, UserRoles.COMMERCIAL)
+  async updateMe(
+    @Body(new ValidationPipe()) updateUserDto: Partial<UpdateUserDto>,
+    @UserData() user: AuthenticatedUser,
+  ): Promise<User> {
+    // Aquí en el servicio se asegura de que solo se actualicen los campos permitidos
+    return this.usersService.updateOwnData(user.id, updateUserDto);
+  }
 }

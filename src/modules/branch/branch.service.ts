@@ -16,4 +16,10 @@ export class BranchService {
     const branch = this.branchRepository.create(createBranchDto);
     return await this.branchRepository.save(branch);
   }
+
+  async findAll(): Promise<Branch[]> {
+    return this.branchRepository.find({
+      order: { name: 'DESC' },
+    });
+  }
 }

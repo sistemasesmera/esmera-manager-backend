@@ -2,7 +2,6 @@ import {
   Injectable,
   ConflictException,
   UnauthorizedException,
-  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -108,12 +107,7 @@ export class AuthService {
     user: AuthenticatedUser, // Usuario autenticado (por ejemplo, obtenido de JWT)
     changePasswordDto: ChangePasswordDto, // DTO que contiene las contraseñas
   ): Promise<{ message: string }> {
-    const { oldPassword, newPassword, confirmPassword } = changePasswordDto;
-
-    // Verificar que la nueva contraseña y la confirmación coinciden
-    if (newPassword !== confirmPassword) {
-      throw new BadRequestException('Las contraseñas no coinciden');
-    }
+    const { currentPassword, newPassword } = changePasswordDto;
 
     // Buscar el usuario en la base de datos
     const existingUser = await this.userRepository.findOne({
@@ -126,12 +120,12 @@ export class AuthService {
     }
 
     // Verificar que la contraseña actual (oldPassword) sea válida
-    const isOldPasswordValid = await bcrypt.compare(
-      oldPassword,
+    const isCurrentPassword = await bcrypt.compare(
+      currentPassword,
       existingUser.password,
     );
 
-    if (!isOldPasswordValid) {
+    if (!isCurrentPassword) {
       throw new UnauthorizedException('La contraseña actual es incorrecta');
     }
 

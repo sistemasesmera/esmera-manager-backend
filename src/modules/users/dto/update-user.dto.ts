@@ -4,13 +4,18 @@ import {
   IsString,
   MaxLength,
   Matches,
+  IsEmail,
+  IsUUID,
+  IsIn,
 } from 'class-validator';
 
-// Expresión regular que permite solo letras, espacios, guiones y apóstrofes
 const namePattern = /^[A-Za-zÀ-ÿ\s\-']+$/;
 
-// DTO de actualización de usuario
 export class UpdateUserDto {
+  @IsOptional()
+  @IsEmail({}, { message: 'Debe ser un email válido' })
+  email?: string;
+
   @IsOptional()
   @IsNotEmpty()
   @IsString()
@@ -28,4 +33,15 @@ export class UpdateUserDto {
     message: 'El apellido contiene caracteres no permitidos.',
   })
   lastName?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['COMERCIAL', 'COMERCIAL_PLUS'], {
+    message: 'El rol debe ser COMERCIAL o COMERCIAL_PLUS',
+  })
+  role?: string;
+
+  @IsOptional()
+  @IsUUID('4', { message: 'El branchId debe ser un UUID válido' })
+  branchId?: string;
 }

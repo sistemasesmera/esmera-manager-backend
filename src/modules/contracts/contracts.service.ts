@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, Repository } from 'typeorm';
 import { CreateContractDto } from './dto/create-contract.dto';
@@ -48,7 +44,7 @@ export class ContractsService {
       );
     }
 
-    // Validación de curso
+    // Validación de cursogit
     const course = await this.courseRepository.findOneBy({
       id: createContractDto.courseId,
     });
@@ -244,6 +240,7 @@ export class ContractsService {
       .leftJoin('contract.alumn', 'alumn')
       .leftJoin('contract.course', 'course')
       .leftJoin('contract.user', 'user')
+      .leftJoin('contract.branch', 'branch')
       .addSelect([
         'alumn.firstName',
         'alumn.id',
@@ -253,6 +250,8 @@ export class ContractsService {
         'user.firstName',
         'user.id',
         'user.lastName',
+        'branch.id',
+        'branch.name',
       ])
       .where('contract.createdAt >= :startDate', {
         startDate: new Date(startDate + 'T00:00:00Z'),
@@ -310,6 +309,23 @@ export class ContractsService {
         limit,
       },
       contracts,
+    };
+  }
+
+  async getAllContracts(page = 1, limit = 10) {
+    const [data, total] = await this.contractRepository.findAndCount({
+      relations: ['user', 'course', 'alumn'],
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'DESC' },
+    });
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     };
   }
 }

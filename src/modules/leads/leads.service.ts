@@ -88,4 +88,100 @@ export class LeadsService {
       nameCourse,
     );
   }
+  async validateItem(itemId: string): Promise<{
+    exists: boolean;
+    item: any | null;
+    boardId: string | null;
+    statusColumnId: string | null;
+  }> {
+    // 1️⃣ Fetch the item and its board
+    const itemQuery = `
+      query {
+        items(ids: ${itemId}) {
+          id
+          name
+          board {
+            id
+            name
+          }
+          created_at
+          updated_at
+        }
+      }
+    `;
+
+    try {
+      const itemResponse = await axios.post(
+        'https://api.monday.com/v2',
+        { query: itemQuery },
+        {
+          headers: {
+            Authorization:
+              'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjMyOTM2NDAwNywiYWFpIjoxMSwidWlkIjoyMjc4MDczOCwiaWFkIjoiMjAyNC0wMy0wNlQxMTo0ODowMi4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6OTI2NzAyMSwicmduIjoidXNlMSJ9.LUVRzuV-inO6CRETAgBi1Pc9Df-OGJ45IqsaSB4uG_Y',
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+
+      const items = itemResponse.data?.data?.items || [];
+      const item = items.length > 0 ? items[0] : null;
+
+      if (!item) {
+        return {
+          exists: false,
+          item: null,
+          boardId: null,
+          statusColumnId: null,
+        };
+      }
+
+      const boardId = item.board?.id ?? null;
+
+      // 2️⃣ Fetch board columns to get the "ESTADO" column id
+      let statusColumnId: string | null = null;
+
+      if (boardId) {
+        const columnsQuery = `
+          query {
+            boards(ids: ${boardId}) {
+              columns {
+                id
+                title
+                type
+              }
+            }
+          }
+        `;
+
+        const columnsResponse = await axios.post(
+          'https://api.monday.com/v2',
+          { query: columnsQuery },
+          {
+            headers: {
+              Authorization:
+                'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjMyOTM2NDAwNywiYWFpIjoxMSwidWlkIjoyMjc4MDczOCwiaWFkIjoiMjAyNC0wMy0wNlQxMTo0ODowMi4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6OTI2NzAyMSwicmduIjoidXNlMSJ9.LUVRzuV-inO6CRETAgBi1Pc9Df-OGJ45IqsaSB4uG_Y',
+              'Content-Type': 'application/json',
+            },
+          },
+        );
+
+        const columns = columnsResponse.data?.data?.boards[0]?.columns || [];
+        const statusColumn = columns.find((col: any) => col.title === 'ESTADO');
+        statusColumnId = statusColumn?.id ?? null;
+      }
+
+      return {
+        exists: true,
+        item,
+        boardId,
+        statusColumnId,
+      };
+    } catch (error: any) {
+      console.error(
+        '⚠️ Error fetching from Monday:',
+        error.response?.data || error.message,
+      );
+      return { exists: false, item: null, boardId: null, statusColumnId: null };
+    }
+  }
 }

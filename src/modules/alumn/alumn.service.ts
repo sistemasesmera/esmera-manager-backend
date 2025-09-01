@@ -33,7 +33,7 @@ export class AlumnService {
     if (existingAlumn) {
       // Lanzar una excepción si el alumno ya existe
       throw new ConflictException(
-        `El alumno con el numero de documento: ${createAlumnDto.documentNumber} ya existe`,
+        `Ya existe un alumno con este número de documento`,
       );
     }
     createAlumnDto.email = createAlumnDto.email.toLowerCase();
@@ -183,5 +183,25 @@ export class AlumnService {
     alumn.isVerified = true;
     alumn.code = null;
     await this.alumnRepository.save(alumn);
+  }
+
+  async updatePartial(id: string, partialUpdateDto: Partial<UpdateAlumnDto>) {
+    const alumn = await this.alumnRepository.findOneBy({ id });
+    if (!alumn) throw new NotFoundException('Alumno no encontrado');
+
+    if (partialUpdateDto.documentNumber) {
+      const existing = await this.alumnRepository.findOneBy({
+        documentNumber: partialUpdateDto.documentNumber,
+      });
+
+      if (existing && existing.id !== id) {
+        throw new BadRequestException(
+          'Ya existe un alumno con este número de documento',
+        );
+      }
+    }
+
+    Object.assign(alumn, partialUpdateDto);
+    return this.alumnRepository.save(alumn);
   }
 }

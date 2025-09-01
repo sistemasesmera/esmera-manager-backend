@@ -1,18 +1,19 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Like, Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { UserRoles } from 'src/constants/Roles.enum';
 import { CreateCommercialDto } from './dto/create-commercial.dto.';
 import * as bcrypt from 'bcryptjs';
 import { Contract } from '../contracts/entities/contract.entity';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { AuthenticatedUser } from 'src/interfaces/authenticated-user.interface';
 import { formatText } from 'src/utils/string-utils';
+import { Branch } from '../branch/entities/branch.entity';
 
 @Injectable()
 export class UsersService {
@@ -21,6 +22,8 @@ export class UsersService {
     private usersRepository: Repository<User>,
     @InjectRepository(Contract)
     private contractRepository: Repository<Contract>,
+    @InjectRepository(Branch)
+    private branchRepository: Repository<Branch>,
   ) {}
 
   // Busca a un Usuario por Email (Se utiliza en el jwtStrategy)
@@ -32,33 +35,47 @@ export class UsersService {
 
   //Crear un comercial
   async createCommercial(createCommercialDto: CreateCommercialDto) {
-    const { firstName, lastName, email, password } = createCommercialDto;
+    const { firstName, lastName, email, password, role, branchId } =
+      createCommercialDto;
 
+    if (role === 'ADMIN') {
+      throw new ConflictException('No se puede crear un usuario administrador');
+    }
     // Verificar si el correo ya está en uso
     const existingUser = await this.usersRepository.findOne({
       where: { email },
     });
     if (existingUser) {
-      throw new ConflictException('Email already in use');
+      throw new ConflictException('El correo ya se encuentra en uso');
     }
 
+    // Hash de la contraseña
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Convertir el email a minúsculas
     const normalizedEmail = email.toLowerCase();
-
     const formatName = formatText(firstName);
     const formatLastName = formatText(lastName);
-    // Crear y guardar el nuevo usuario en la base de datos
+
+    // Verificar que la branch exista
+    const branch = await this.branchRepository.findOne({
+      where: { id: branchId },
+    });
+    if (!branch) {
+      throw new NotFoundException('Branch not found');
+    }
+
+    // Crear el usuario
     const newUser = this.usersRepository.create({
       firstName: formatName,
       lastName: formatLastName,
       email: normalizedEmail,
       password: hashedPassword,
+      role,
+      branch, // Asignar relación
     });
+
     await this.usersRepository.save(newUser);
 
-    delete newUser.password;
+    delete newUser.password; // No devolver la contraseña
     return newUser;
   }
 
@@ -66,34 +83,43 @@ export class UsersService {
   async getCommercials(
     page: number = 1,
     limit: number = 5,
-    email?: string,
     active?: number,
+    searchTerm?: string,
   ) {
     const skip = (page - 1) * limit;
 
-    // Construye las condiciones dinámicamente según los filtros recibidos
-    const where: any = {
-      role: In([UserRoles.COMMERCIAL, UserRoles.COMMERCIAL_PLUS]), // Filtrar por múltiples roles
-    };
+    const qb = this.usersRepository.createQueryBuilder('user');
 
-    // Si se proporciona el filtro de email, añade una condición de 'LIKE'
-    if (email) {
-      where.email = Like(`%${email}%`);
-    }
+    qb.leftJoinAndSelect('user.branch', 'branch');
 
-    // Si se proporciona el filtro de estado (activo/inactivo), añádelo
-    if (active !== undefined) {
-      where.active = active === 1;
-    }
-    // Ejecuta la consulta con los filtros y paginación
-    const [commercials, total] = await this.usersRepository.findAndCount({
-      where,
-      take: limit,
-      skip,
-      order: {
-        createdAt: 'DESC',
-      },
+    // Filtrar por roles comerciales
+    qb.where('user.role IN (:...roles)', {
+      roles: [UserRoles.COMMERCIAL, UserRoles.COMMERCIAL_PLUS],
     });
+
+    // Filtro opcional por estado
+    if (active !== undefined) {
+      qb.andWhere('user.active = :active', { active: active === 1 });
+    }
+
+    // Filtro opcional por searchTerm (nombre, apellido, full name o email)
+    if (searchTerm) {
+      qb.andWhere(
+        `(LOWER(user.firstName) LIKE :search OR
+          LOWER(user.lastName) LIKE :search OR
+          LOWER(CONCAT(user.firstName, ' ', user.lastName)) LIKE :search OR
+          LOWER(user.email) LIKE :search)`,
+        { search: `%${searchTerm.toLowerCase()}%` },
+      );
+    }
+
+    // Orden descendente por fecha de creación
+    qb.orderBy('user.createdAt', 'DESC');
+
+    // Paginación
+    qb.take(limit).skip(skip);
+
+    const [commercials, total] = await qb.getManyAndCount();
 
     return {
       data: commercials,
@@ -102,6 +128,20 @@ export class UsersService {
       limit,
       totalPages: Math.ceil(total / limit),
     };
+  }
+
+  async getCommercialsSelect() {
+    return await this.usersRepository.find({
+      where: [
+        { role: UserRoles.COMMERCIAL },
+        { role: UserRoles.COMMERCIAL_PLUS },
+      ],
+      order: {
+        active: 'DESC', // Activos primero
+        createdAt: 'ASC', // Orden alfabético dentro de cada grupo
+      },
+      select: ['id', 'firstName', 'lastName', 'active', 'role'], // Solo los campos que necesitas
+    });
   }
 
   // Actualiza el estado de un comercial (Activo/Inactivo)
@@ -161,36 +201,85 @@ export class UsersService {
 
     return users;
   }
-  async updateUser(
-    updateUserData: UpdateUserDto,
-    user: AuthenticatedUser,
-  ): Promise<User> {
-    // Busca el usuario por ID desde el token
-    const existingUser = await this.usersRepository.findOne({
-      where: { id: user.id },
+
+  async updatePartial(id: string, partialUpdateDto: UpdateUserDto) {
+    const commercial = await this.usersRepository.findOne({
+      where: { id },
+      relations: ['branch'],
     });
-    if (!existingUser) {
-      throw new NotFoundException('Usuario no encontrado');
+
+    if (!commercial) {
+      throw new NotFoundException('Comercial no encontrado');
     }
 
-    // Formatear el nombre y apellido antes de actualizarlos
-    if (updateUserData.firstName) {
-      updateUserData.firstName = formatText(updateUserData.firstName);
+    // Validación de email duplicado
+    if (partialUpdateDto.email) {
+      const existing = await this.usersRepository.findOne({
+        where: { email: partialUpdateDto.email },
+      });
+
+      if (existing && existing.id !== id) {
+        throw new BadRequestException('Ya existe un usuario con este email');
+      }
     }
 
-    if (updateUserData.lastName) {
-      updateUserData.lastName = formatText(updateUserData.lastName);
+    // Si viene branchId, cargamos la entidad y la asignamos
+    if (partialUpdateDto.branchId) {
+      const branch = await this.branchRepository.findOneBy({
+        id: partialUpdateDto.branchId,
+      });
+
+      if (!branch) {
+        throw new NotFoundException('Sede no encontrada');
+      }
+
+      commercial.branch = branch;
+      delete partialUpdateDto.branchId;
     }
-    // Actualiza solo los campos permitidos
-    Object.assign(existingUser, updateUserData);
-    // Guarda los cambios en la base de datos
-    await this.usersRepository.save(existingUser);
 
-    delete existingUser.active;
-    delete existingUser.role;
-    delete existingUser.id;
-    delete existingUser.createdAt;
+    // Merge del resto de campos (firstName, lastName, email, role)
+    Object.assign(commercial, partialUpdateDto);
 
-    return existingUser;
+    return this.usersRepository.save(commercial);
+  }
+
+  async changeCommercialPassword(
+    id: string,
+    newPassword: string,
+  ): Promise<User> {
+    const commercial = await this.usersRepository.findOne({ where: { id } });
+    if (!commercial) {
+      throw new NotFoundException('Comercial no encontrado');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    commercial.password = hashedPassword;
+
+    return this.usersRepository.save(commercial);
+  }
+
+  async updateOwnData(
+    userId: string,
+    updateUserDto: Partial<UpdateUserDto>,
+  ): Promise<User> {
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new BadRequestException('Usuario no encontrado');
+    }
+
+    const allowedFields: (keyof UpdateUserDto)[] = [
+      'firstName',
+      'lastName',
+      'email',
+    ];
+    for (const key of Object.keys(updateUserDto)) {
+      if (allowedFields.includes(key as keyof UpdateUserDto)) {
+        user[key] = updateUserDto[key];
+      }
+    }
+
+    await this.usersRepository.save(user);
+    return user;
   }
 }

@@ -27,8 +27,8 @@ export class CoursesController {
     @Query(new ValidationPipe({ transform: true, whitelist: true }))
     paginationDto: PaginationDto,
   ) {
-    const { page, limit, name } = paginationDto; // Extrae name
-    return this.coursesService.findAllCourses(page, limit, name);
+    const { page, limit, searchTerm } = paginationDto; // Extrae name
+    return this.coursesService.findAllCourses(page, limit, searchTerm);
   }
 
   @Get('selects')

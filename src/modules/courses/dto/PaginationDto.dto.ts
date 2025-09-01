@@ -9,5 +9,5 @@ export class PaginationDto {
 
   @IsString()
   @IsOptional()
-  name?: string; // Agrega el campo name
+  searchTerm?: string; // Agrega el campo name
 }

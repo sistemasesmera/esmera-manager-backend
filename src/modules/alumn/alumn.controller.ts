@@ -9,6 +9,7 @@ import {
   Put,
   NotFoundException,
   BadRequestException,
+  Patch,
 } from '@nestjs/common';
 import { AlumnService } from './alumn.service';
 import { CreateAlumnDto } from './dto/create-alumn.dto';
@@ -58,6 +59,15 @@ export class AlumnController {
     @Body() updateAlumnDto: UpdateAlumnDto,
   ) {
     return this.alumnService.update(id, updateAlumnDto);
+  }
+
+  // PATCH /alumns/:id -> Para actualizar un alumno de forma partial
+  @Patch(':id')
+  async patchAlumn(
+    @Param('id') id: string,
+    @Body() partialUpdateDto: Partial<UpdateAlumnDto>,
+  ) {
+    return this.alumnService.updatePartial(id, partialUpdateDto);
   }
 
   // Endpoint para enviar el codigo al email del alumno.

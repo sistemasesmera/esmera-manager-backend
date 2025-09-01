@@ -4,9 +4,10 @@ import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { Contract } from '../contracts/entities/contract.entity';
+import { Branch } from '../branch/entities/branch.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Contract])],
+  imports: [TypeOrmModule.forFeature([User, Contract, Branch])],
   providers: [UsersService],
   exports: [UsersService], // Asegúrate de exportar el servicio
   controllers: [UsersController],
