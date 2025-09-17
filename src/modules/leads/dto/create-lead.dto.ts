@@ -26,6 +26,7 @@ export class CreateLeadDto {
       'BARBERIA',
       'UÑAS',
       'CEJASYPESTANAS',
+      'SIN GESTION',
     ],
     {
       message:
