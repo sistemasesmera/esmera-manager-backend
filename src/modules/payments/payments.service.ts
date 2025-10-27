@@ -18,8 +18,8 @@ export class PaymentsService {
       payment_method_types: ['card'],
       line_items: [{ price: priceId, quantity: 1 }],
       mode: 'payment',
-      success_url: 'http://localhost:4321/cursos/pago-exitoso',
-      cancel_url: 'http://localhost:4321/cursos/pago-cancelado',
+      success_url: 'http://esmeraschool.com/cursos/pago-exitoso',
+      cancel_url: 'http://esmeraschool.com/cursos/pago-cancelado',
       metadata, // aquí pasamos nombre, apellido, teléfono, curso, etc.
     });
 
