@@ -308,4 +308,287 @@ export class EmailService {
       }
     }
   }
+
+  async sendPaymentNotificationToAdmin(metadata: {
+    name: string;
+    lastname: string;
+    email: string;
+    phone: string;
+    courseName: string;
+    modality: string;
+  }) {
+    try {
+      const { name, lastname, email, phone, courseName, modality } = metadata;
+
+      const subject = `Nuevo pago recibido: ${courseName}`;
+
+      const body = `
+        <div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; background-color: #f9f9f9;">
+          <div style="text-align: center; padding-bottom: 15px;">
+            <h2 style="color: #2d6cdf; margin-bottom: 5px;">Esmera School</h2>
+            <p style="color: #333; font-size: 16px; margin: 0;">Notificación de pago exitoso</p>
+          </div>
+  
+          <hr style="border: none; border-top: 1px solid #ccc; margin: 20px 0;" />
+  
+          <p style="font-size: 16px; color: #333;">Se ha registrado un pago exitoso para un nuevo alumno:</p>
+  
+          <ul style="list-style: none; padding: 0; font-size: 16px; color: #333;">
+            <li><strong>Alumno:</strong> ${name} ${lastname}</li>
+            <li><strong>Email:</strong> ${email}</li>
+            <li><strong>Teléfono:</strong> ${phone}</li>
+            <li><strong>Curso:</strong> ${courseName}</li>
+            <li><strong>Modalidad:</strong> ${modality}</li>
+          </ul>
+  
+          <p style="font-size: 16px; color: #333;">
+            Procede a contactar al alumno en un plazo máximo de 48 horas, explícale cómo es el proceso de matrícula y dale acceso al Campus:
+            <a href="https://campus.esmeraschool.com" target="_blank">campus.esmeraschool.com</a>
+          </p>
+  
+          <hr style="border: none; border-top: 1px solid #ccc; margin: 20px 0;" />
+  
+          <p style="font-size: 14px; color: #666; text-align: center;">
+            Este es un aviso automático. Por favor, asegúrate de dar seguimiento al registro del alumno.
+          </p>
+  
+          <p style="font-size: 12px; color: #999; text-align: center; margin-top: 10px;">
+            &copy; ${new Date().getFullYear()} Esmera School. Todos los derechos reservados.
+          </p>
+        </div>
+      `;
+
+      const adminEmails = [
+        'sistemas@esmeraschool.com, n.garcia@esmeraschool.com, alumnos@esmeraschool.com',
+      ];
+
+      for (const adminEmail of adminEmails) {
+        await sgMail.send({
+          to: adminEmail,
+          from: this.configService.get<string>('FROM_EMAIL'),
+          subject,
+          html: body,
+        });
+      }
+
+      console.log(
+        'Email de pago enviado a administradores: ' + adminEmails.join(', '),
+      );
+    } catch (error) {
+      console.error('Error al enviar email a control de estudios', error);
+      if (error.response) console.error(error.response.body);
+    }
+  }
+
+  async sendPaymentConfirmationToStudent(metadata: {
+    name: string;
+    lastname: string;
+    email: string;
+    courseName: string;
+    modality: string;
+  }): Promise<void> {
+    try {
+      const { name, lastname, email, courseName, modality } = metadata;
+
+      const subject = `¡Compra realizada con éxito! Curso: ${courseName}`;
+
+      const body = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9;">
+          <div style="text-align: center; padding-bottom: 20px;">
+            <img src="https://www.esmeraschool.com/cdn/shop/files/4_1_88f724f6-e7d0-4b83-ad30-adc974fad44f.png?v=1706281740&width=195" 
+              alt="Esmera School Logo" style="width: 120px; margin-bottom: 10px;" />
+            <h2 style="color: #006eae; font-size: 24px; margin-bottom: 5px;">Esmera School</h2>
+          </div>
+  
+          <p style="font-size: 16px; color: #333;">
+            ¡Hola <strong>${name} ${lastname}</strong>! 
+          </p>
+          <p style="font-size: 16px; color: #333;">
+            Hemos recibido tu pago para el curso: <strong>${courseName}</strong> en modalidad <strong>${modality}</strong>.
+          </p>
+          <p style="font-size: 16px; color: #333;">
+            En un plazo de <strong>hasta 48 horas hábiles</strong> nos pondremos en contacto contigo para enviarte los detalles de matriculación y tus credenciales de acceso.
+          </p>
+  
+          <p style="font-size: 16px; color: #333;">
+            Mientras tanto, si tienes alguna duda, puedes responder a este correo o contactarnos a través de nuestro soporte.
+          </p>
+  
+          <div style="text-align: center; margin-top: 30px;">
+            <a href="https://www.esmeraschool.com" 
+               style="background-color: #006eae; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+               Visitar la Web
+            </a>
+          </div>
+  
+          <p style="font-size: 12px; color: #999; text-align: center; margin-top: 20px;">
+            &copy; ${new Date().getFullYear()} Esmera School. Todos los derechos reservados.
+          </p>
+        </div>
+      `;
+
+      // Enviar el correo al alumno
+      await sgMail.send({
+        to: email,
+        from: this.configService.get<string>('FROM_EMAIL'),
+        subject,
+        html: body,
+      });
+
+      console.log(`Email de confirmación enviado a: ${email}`);
+    } catch (error) {
+      console.error('Error al enviar correo al alumno', error);
+      if (error.response) {
+        console.error(error.response.body);
+      }
+    }
+  }
+
+  async sendPaymentErrorNotificationToAdmin(
+    metadata?: {
+      name?: string;
+      lastname?: string;
+      email?: string;
+      phone?: string;
+      courseName?: string;
+      modality?: string;
+    },
+    errorMessage?: string,
+  ) {
+    try {
+      const subject = '⚠ Error en el procesamiento de pago';
+
+      const body = `
+        <div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; background-color: #fff3f3;">
+          <div style="text-align: center; padding-bottom: 15px;">
+            <h2 style="color: #d32f2f; margin-bottom: 5px;">Esmera School</h2>
+            <p style="color: #333; font-size: 16px; margin: 0;">Notificación de error en el pago</p>
+          </div>
+  
+          <hr style="border: none; border-top: 1px solid #ccc; margin: 20px 0;" />
+  
+          <p style="font-size: 16px; color: #333;">
+            Ocurrió un error al procesar el pago en Stripe para el siguiente alumno:
+          </p>
+  
+          <ul style="list-style: none; padding: 0; font-size: 16px; color: #333;">
+            <li><strong>Alumno:</strong> ${metadata?.name || 'No disponible'} ${metadata?.lastname || ''}</li>
+            <li><strong>Email:</strong> ${metadata?.email || 'No disponible'}</li>
+            <li><strong>Teléfono:</strong> ${metadata?.phone || 'No disponible'}</li>
+            <li><strong>Curso:</strong> ${metadata?.courseName || 'No disponible'}</li>
+            <li><strong>Modalidad:</strong> ${metadata?.modality || 'No disponible'}</li>
+          </ul>
+  
+          <p style="font-size: 16px; color: #333;">
+            Error registrado: ${errorMessage || 'Sin detalles del error'}
+          </p>
+  
+          <p style="font-size: 16px; color: #333;">
+            ⚠ Por favor, revisa la situación y contacta al alumno si es necesario.
+          </p>
+  
+          <hr style="border: none; border-top: 1px solid #ccc; margin: 20px 0;" />
+  
+          <p style="font-size: 12px; color: #999; text-align: center; margin-top: 10px;">
+            &copy; ${new Date().getFullYear()} Esmera School. Todos los derechos reservados.
+          </p>
+        </div>
+      `;
+
+      const adminEmails = [
+        'sistemas@esmeraschool.com, n.garcia@esmeraschool.com, alumnos@esmeraschool.com',
+      ];
+      for (const adminEmail of adminEmails) {
+        await sgMail.send({
+          to: adminEmail,
+          from: this.configService.get<string>('FROM_EMAIL'),
+          subject,
+          html: body,
+        });
+      }
+
+      console.log(
+        'Email de error de pago enviado a administradores: ' +
+          adminEmails.join(', '),
+      );
+    } catch (error) {
+      console.error('Error al enviar notificación de fallo de pago', error);
+      if (error.response) console.error(error.response.body);
+    }
+  }
+
+  async sendWebhookErrorNotificationToControl(
+    metadata?: {
+      name?: string;
+      lastname?: string;
+      email?: string;
+      phone?: string;
+      courseName?: string;
+      modality?: string;
+      priceId?: string;
+    },
+    errorMessage?: string,
+  ) {
+    try {
+      const subject = '⚠ Error en la verificación del Webhook Stripe';
+
+      const body = `
+        <div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; background-color: #fff8e1;">
+          <div style="text-align: center; padding-bottom: 15px;">
+            <h2 style="color: #f57c00; margin-bottom: 5px;">Esmera School</h2>
+            <p style="color: #333; font-size: 16px; margin: 0;">Notificación de fallo en Webhook</p>
+          </div>
+  
+          <hr style="border: none; border-top: 1px solid #ccc; margin: 20px 0;" />
+  
+          <p style="font-size: 16px; color: #333;">
+            Ha fallado la verificación del webhook de Stripe para el siguiente alumno:
+          </p>
+  
+          <ul style="list-style: none; padding: 0; font-size: 16px; color: #333;">
+            <li><strong>Alumno:</strong> ${metadata?.name || 'No disponible'} ${metadata?.lastname || ''}</li>
+            <li><strong>Email:</strong> ${metadata?.email || 'No disponible'}</li>
+            <li><strong>Teléfono:</strong> ${metadata?.phone || 'No disponible'}</li>
+            <li><strong>Curso:</strong> ${metadata?.courseName || 'No disponible'}</li>
+            <li><strong>Modalidad:</strong> ${metadata?.modality || 'No disponible'}</li>
+            ${metadata?.priceId ? `<li><strong>Price ID:</strong> ${metadata.priceId}</li>` : ''}
+          </ul>
+  
+          <p style="font-size: 16px; color: #333;">
+            Mensaje de error: ${errorMessage || 'Sin detalles del error'}
+          </p>
+  
+          <p style="font-size: 16px; color: #333;">
+            ⚠ Se recomienda revisar en Stripe si el pago se ha procesado correctamente y verificar el estado de la transacción.
+          </p>
+  
+          <hr style="border: none; border-top: 1px solid #ccc; margin: 20px 0;" />
+  
+          <p style="font-size: 12px; color: #999; text-align: center; margin-top: 10px;">
+            &copy; ${new Date().getFullYear()} Esmera School. Todos los derechos reservados.
+          </p>
+        </div>
+      `;
+
+      const adminEmails = [
+        'sistemas@esmeraschool.com, n.garcia@esmeraschool.com, alumnos@esmeraschool.com',
+      ];
+      for (const email of adminEmails) {
+        await sgMail.send({
+          to: email,
+          from: this.configService.get<string>('FROM_EMAIL'),
+          subject,
+          html: body,
+        });
+      }
+
+      console.log(
+        'Email de fallo de webhook enviado a control de estudios: ' +
+          adminEmails.join(', '),
+      );
+    } catch (error) {
+      console.error('Error al enviar notificación de fallo de webhook', error);
+      if (error.response) console.error(error.response.body);
+    }
+  }
 }

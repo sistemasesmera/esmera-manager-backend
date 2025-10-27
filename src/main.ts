@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import * as morgan from 'morgan';
 import * as bodyParser from 'body-parser';
+import rawBodyMiddleware from './middleware/raw-body.middleware';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -14,11 +15,13 @@ async function bootstrap() {
     credentials: true,
   });
 
+  app.use(rawBodyMiddleware());
+
   // Usar json
   app.use(bodyParser.json());
 
   //Configurar morgan para registrar las peticiones http
-  app.use(morgan('combined')); // Puedes usar 'dev', 'combined', o configurar un formato personalizado
+  app.use(morgan('dev')); // Puedes usar 'dev', 'combined', o configurar un formato personalizado
 
   app.useGlobalPipes(
     new ValidationPipe({

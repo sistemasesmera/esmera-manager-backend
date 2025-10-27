@@ -14,6 +14,7 @@ import { CouponsModule } from './modules/coupons/coupons.module';
 import { WebhookModule } from './modules/webhook/webhook.module';
 import { LeadsModule } from './modules/leads/leads.module';
 import { BranchModule } from './modules/branch/branch.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { BranchModule } from './modules/branch/branch.module';
     WebhookModule,
     LeadsModule,
     BranchModule,
+    PaymentsModule,
   ],
   controllers: [],
   providers: [],
