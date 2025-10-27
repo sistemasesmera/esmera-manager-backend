@@ -105,12 +105,12 @@ export class PaymentsController {
 
         // 2️⃣ Guardar alumno en la BD
         await this.onlineSaleCourseService.create({
-          name: 'Alejandro',
-          lastName: 'Morales',
-          email: 'alejandroaml0528@gmail.com',
-          amount: 202,
-          nameCourse: 'Cejas y Pestañas',
-          phone: '676017218',
+          name: metadata.name,
+          lastName: metadata.lastname,
+          email: metadata.email,
+          amount: session.amount_total / 100,
+          nameCourse: metadata.courseName,
+          phone: metadata.phone,
         });
 
         // 3️⃣ Enviar correo al alumno
