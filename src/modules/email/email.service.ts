@@ -359,7 +359,9 @@ export class EmailService {
       `;
 
       const adminEmails = [
-        'sistemas@esmeraschool.com, n.garcia@esmeraschool.com, alumnos@esmeraschool.com',
+        'sistemas@esmeraschool.com',
+        'n.garcia@esmeraschool.com',
+        'alumnos@esmeraschool.com',
       ];
 
       for (const adminEmail of adminEmails) {
@@ -496,7 +498,9 @@ export class EmailService {
       `;
 
       const adminEmails = [
-        'sistemas@esmeraschool.com, n.garcia@esmeraschool.com, alumnos@esmeraschool.com',
+        'sistemas@esmeraschool.com',
+        'n.garcia@esmeraschool.com',
+        'alumnos@esmeraschool.com',
       ];
       for (const adminEmail of adminEmails) {
         await sgMail.send({
@@ -571,7 +575,9 @@ export class EmailService {
       `;
 
       const adminEmails = [
-        'sistemas@esmeraschool.com, n.garcia@esmeraschool.com, alumnos@esmeraschool.com',
+        'sistemas@esmeraschool.com',
+        'n.garcia@esmeraschool.com',
+        'alumnos@esmeraschool.com',
       ];
       for (const email of adminEmails) {
         await sgMail.send({
