@@ -15,6 +15,7 @@ import { WebhookModule } from './modules/webhook/webhook.module';
 import { LeadsModule } from './modules/leads/leads.module';
 import { BranchModule } from './modules/branch/branch.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { OnlineSaleCourseModule } from './modules/online-sale-course/online-sale-course.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
     LeadsModule,
     BranchModule,
     PaymentsModule,
+    OnlineSaleCourseModule,
   ],
   controllers: [],
   providers: [],
