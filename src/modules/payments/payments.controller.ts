@@ -9,12 +9,14 @@ import {
 import { PaymentsService } from './payments.service';
 import Stripe from 'stripe';
 import { EmailService } from '../email/email.service';
+import { OnlineSaleCourseService } from '../online-sale-course/online-sale-course.service';
 
 @Controller('payments')
 export class PaymentsController {
   constructor(
     private readonly paymentsService: PaymentsService,
     private readonly emailService: EmailService,
+    private readonly onlineSaleCourseService: OnlineSaleCourseService,
   ) {}
 
   //crear checkout de pago
@@ -102,6 +104,14 @@ export class PaymentsController {
         };
 
         // 2️⃣ Guardar alumno en la BD
+        await this.onlineSaleCourseService.create({
+          name: 'Alejandro',
+          lastName: 'Morales',
+          email: 'alejandroaml0528@gmail.com',
+          amount: 202,
+          nameCourse: 'Cejas y Pestañas',
+          phone: '676017218',
+        });
 
         // 3️⃣ Enviar correo al alumno
         await this.emailService.sendPaymentConfirmationToStudent(alumn);
