@@ -24,14 +24,14 @@ export class PaymentsController {
   async createCheckoutSession(
     @Body()
     body: {
-      priceId: string;
+      priceId: string; // id del price (sacado de stripe)
       name: string;
       lastname: string;
       email: string;
       phone: string;
-      courseName: string;
-      modality: string;
-      practiceMode: string;
+      courseName: string; // Nombre del curso
+      modality: string; // modalidad: Online - Presencial
+      practiceMode: string; //con-practicas o sin-practicas
     },
   ) {
     const {
@@ -61,7 +61,7 @@ export class PaymentsController {
     return { url };
   }
 
-  //webhook de pagos  @Post('webhook')
+  //webhook de pagos  (configurado desde stripe... )
   @Post('webhook')
   @HttpCode(200) // Stripe espera 2xx
   async webhook(@Req() req: any) {
@@ -79,13 +79,12 @@ export class PaymentsController {
       event = this.paymentsService.constructEvent(rawBody, sig, webhookSecret);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      console.error('Webhook Error:', message);
+      // En el caso que el backend no pueda procesar el Webhook entra a este bloque
 
       // Notificar a control de estudios si falla la verificación del webhook
       await this.emailService.sendWebhookErrorNotificationToControl(
         {
           priceId: req.body?.metadata?.priceId,
-          practiceMode: req.body?.metadata?.practiceMode,
         },
         message,
       );
@@ -93,20 +92,26 @@ export class PaymentsController {
       throw new HttpException(`Webhook Error: ${message}`, 400);
     }
 
+    //bloque donde procesa el pago.
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
+      const paymentIntentId =
+        typeof session.payment_intent === 'string'
+          ? session.payment_intent
+          : session.payment_intent.id; // si es objeto, toma su id
 
       try {
         // 1️⃣ Extraer datos de la sesión
         const metadata = session.metadata || {};
+
         const alumn = {
           name: metadata.name,
           lastname: metadata.lastname,
           email: metadata.email,
           phone: metadata.phone,
           courseName: metadata.courseName,
-          modality: metadata.modality,
-          practiceMode: metadata.practiceMode,
+          modality: metadata.modality, //Online o Presencial
+          practiceMode: metadata.practiceMode, // Con Practicas / Sin Prácticas
         };
 
         // 2️⃣ Guardar alumno en la BD
@@ -117,6 +122,9 @@ export class PaymentsController {
           amount: session.amount_total / 100,
           nameCourse: metadata.courseName,
           phone: metadata.phone,
+          practiceMode: metadata.practiceMode,
+          modality: metadata.modality,
+          paymentReference: paymentIntentId,
         });
 
         // 3️⃣ Enviar correo al alumno

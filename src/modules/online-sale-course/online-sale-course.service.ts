@@ -2,19 +2,17 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import {
-  OnlineSaleCourse,
-  PaymentStatus,
-} from './entities/online-sale-course.entity';
+import { OnlineSaleCourse } from './entities/online-sale-course.entity';
 
 export interface CreateOnlineSaleCourseDto {
   name: string;
   lastName: string;
   email: string;
-  phone?: string;
+  phone: string;
   nameCourse: string;
   amount: number;
-  paymentStatus?: PaymentStatus; // opcional, por defecto PENDING
+  practiceMode: string; // nuevo campo
+  modality: string; // nuevo campo
   paymentReference?: string;
 }
 
@@ -31,7 +29,6 @@ export class OnlineSaleCourseService {
   async create(dto: CreateOnlineSaleCourseDto): Promise<OnlineSaleCourse> {
     const sale = this.onlineSaleRepo.create({
       ...dto,
-      paymentStatus: dto.paymentStatus || PaymentStatus.PENDING,
     });
 
     return this.onlineSaleRepo.save(sale);

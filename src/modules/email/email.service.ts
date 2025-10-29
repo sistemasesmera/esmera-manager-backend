@@ -425,8 +425,6 @@ export class EmailService {
       const body = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9;">
           <div style="text-align: center; padding-bottom: 20px;">
-            <img src="https://www.esmeraschool.com/cdn/shop/files/4_1_88f724f6-e7d0-4b83-ad30-adc974fad44f.png?v=1706281740&width=195" 
-              alt="Esmera School Logo" style="width: 120px; margin-bottom: 10px;" />
             <h2 style="color: #006eae; font-size: 24px; margin-bottom: 5px;">Esmera School</h2>
           </div>
   
@@ -496,7 +494,7 @@ export class EmailService {
             ? 'Sin Prácticas'
             : 'No especificado';
 
-      const subject = `⚠ Error en el procesamiento de pago (${practiceLabel})`; // 👈 agregado
+      const subject = `⚠ Error en el procesamiento de pago`; // 👈 agregado
 
       const body = `
         <div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; background-color: #fff3f3;">
@@ -562,20 +560,12 @@ export class EmailService {
 
   async sendWebhookErrorNotificationToControl(
     metadata?: {
-      practiceMode?: string;
       priceId?: string;
     },
     errorMessage?: string,
   ) {
     try {
-      const practiceLabel =
-        metadata?.practiceMode === 'con-practicas'
-          ? 'Con Prácticas'
-          : metadata?.practiceMode === 'sin-practicas'
-            ? 'Sin Prácticas'
-            : 'No especificado';
-
-      const subject = `⚠ Error en la verificación del Webhook Stripe (${practiceLabel})`;
+      const subject = `⚠ Error en la verificación del Webhook Stripe `;
 
       const body = `
         <div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; background-color: #fff8e1;">
@@ -591,7 +581,6 @@ export class EmailService {
           </p>
   
           <ul style="list-style: none; padding: 0; font-size: 16px; color: #333;">
-            <li><strong>Tipo de curso:</strong> ${practiceLabel}</li>
             ${metadata?.priceId ? `<li><strong>Price ID:</strong> ${metadata.priceId}</li>` : ''}
           </ul>
   

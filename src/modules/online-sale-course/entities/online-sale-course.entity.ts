@@ -10,15 +10,8 @@ import {
   IsNotEmpty,
   IsEmail,
   IsOptional,
-  IsEnum,
   IsNumber,
 } from 'class-validator';
-
-export enum PaymentStatus {
-  PENDING = 'pending',
-  PAID = 'paid',
-  FAILED = 'failed',
-}
 
 @Entity()
 export class OnlineSaleCourse {
@@ -53,19 +46,20 @@ export class OnlineSaleCourse {
   @Column('decimal', { precision: 10, scale: 2 })
   @IsNumber()
   amount: number;
+  @Column()
+  @IsString()
+  @IsNotEmpty()
+  practiceMode: string; // 'con-practicas' | 'sin-practicas'
 
-  @Column({
-    type: 'enum',
-    enum: PaymentStatus,
-    default: PaymentStatus.PENDING,
-  })
-  @IsEnum(PaymentStatus)
-  paymentStatus: PaymentStatus;
+  @Column()
+  @IsString()
+  @IsNotEmpty()
+  modality: string; // 'Online' | 'Presencial'
 
   @Column({ nullable: true })
   @IsString()
   @IsOptional()
-  paymentReference?: string; // ID del pago externo (Stripe, PayPal, etc.)
+  paymentReference?: string; // ID del pago externo (Stripe)
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
