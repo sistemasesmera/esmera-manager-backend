@@ -29,12 +29,21 @@ export class PaymentsController {
       lastname: string;
       email: string;
       phone: string;
-      modality: string;
       courseName: string;
+      modality: string;
+      practiceMode: string;
     },
   ) {
-    const { priceId, name, lastname, email, phone, modality, courseName } =
-      body;
+    const {
+      priceId,
+      name,
+      lastname,
+      email,
+      phone,
+      modality,
+      courseName,
+      practiceMode,
+    } = body;
 
     const url = await this.paymentsService.createCheckoutSession({
       priceId,
@@ -45,6 +54,7 @@ export class PaymentsController {
         email,
         modality,
         courseName,
+        practiceMode,
       },
     });
 
@@ -71,16 +81,11 @@ export class PaymentsController {
       const message = err instanceof Error ? err.message : String(err);
       console.error('Webhook Error:', message);
 
-      // ⚠️ Notificar a control de estudios si falla la verificación del webhook
+      // Notificar a control de estudios si falla la verificación del webhook
       await this.emailService.sendWebhookErrorNotificationToControl(
         {
-          name: req.body?.metadata?.name,
-          lastname: req.body?.metadata?.lastname,
-          email: req.body?.metadata?.email,
-          phone: req.body?.metadata?.phone,
-          courseName: req.body?.metadata?.courseName,
-          modality: req.body?.metadata?.modality,
           priceId: req.body?.metadata?.priceId,
+          practiceMode: req.body?.metadata?.practiceMode,
         },
         message,
       );
@@ -101,6 +106,7 @@ export class PaymentsController {
           phone: metadata.phone,
           courseName: metadata.courseName,
           modality: metadata.modality,
+          practiceMode: metadata.practiceMode,
         };
 
         // 2️⃣ Guardar alumno en la BD
@@ -124,6 +130,8 @@ export class PaymentsController {
           phone: alumn.phone,
           courseName: alumn.courseName,
           modality: alumn.modality,
+          practiceMode: session?.metadata?.practiceMode,
+          totalPaid: session?.amount_total / 100,
         });
       } catch (error) {
         console.error('Error procesando checkout.session.completed', error);
@@ -137,6 +145,7 @@ export class PaymentsController {
             phone: session?.metadata?.phone,
             courseName: session?.metadata?.courseName,
             modality: session?.metadata?.modality,
+            practiceMode: session?.metadata?.practiceMode,
           },
           error.message,
         );

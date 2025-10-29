@@ -316,11 +316,29 @@ export class EmailService {
     phone: string;
     courseName: string;
     modality: string;
+    practiceMode?: string;
+    totalPaid?: number;
   }) {
     try {
-      const { name, lastname, email, phone, courseName, modality } = metadata;
+      const {
+        name,
+        lastname,
+        email,
+        phone,
+        courseName,
+        modality,
+        practiceMode,
+        totalPaid,
+      } = metadata;
 
-      const subject = `Nuevo pago recibido: ${courseName}`;
+      const practiceLabel =
+        practiceMode === 'con-practicas'
+          ? 'Con Prácticas'
+          : practiceMode === 'sin-practicas'
+            ? 'Sin Prácticas'
+            : 'No especificado';
+
+      const subject = `Nuevo pago recibido: ${courseName} (${practiceLabel})`;
 
       const body = `
         <div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; background-color: #f9f9f9;">
@@ -331,7 +349,7 @@ export class EmailService {
   
           <hr style="border: none; border-top: 1px solid #ccc; margin: 20px 0;" />
   
-          <p style="font-size: 16px; color: #333;">Se ha registrado un pago exitoso para un nuevo alumno:</p>
+          <p style="font-size: 16px; color: #333;">Se ha registrado un pago exitoso de <b>${totalPaid} €</b> para un nuevo alumno:</p>
   
           <ul style="list-style: none; padding: 0; font-size: 16px; color: #333;">
             <li><strong>Alumno:</strong> ${name} ${lastname}</li>
@@ -339,6 +357,7 @@ export class EmailService {
             <li><strong>Teléfono:</strong> ${phone}</li>
             <li><strong>Curso:</strong> ${courseName}</li>
             <li><strong>Modalidad:</strong> ${modality}</li>
+            <li><strong>Tipo de curso:</strong> ${practiceLabel}</li> 
           </ul>
   
           <p style="font-size: 16px; color: #333;">
@@ -388,11 +407,20 @@ export class EmailService {
     email: string;
     courseName: string;
     modality: string;
+    practiceMode?: string;
   }): Promise<void> {
     try {
-      const { name, lastname, email, courseName, modality } = metadata;
+      const { name, lastname, email, courseName, modality, practiceMode } =
+        metadata;
 
-      const subject = `¡Compra realizada con éxito! Curso: ${courseName}`;
+      const practiceLabel =
+        practiceMode === 'con-practicas'
+          ? 'Con Prácticas'
+          : practiceMode === 'sin-practicas'
+            ? 'Sin Prácticas'
+            : '';
+
+      const subject = `¡Compra realizada con éxito! Curso: ${courseName} ${practiceLabel ? `(${practiceLabel})` : ''}`;
 
       const body = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #f9f9f9;">
@@ -407,7 +435,9 @@ export class EmailService {
           </p>
           <p style="font-size: 16px; color: #333;">
             Hemos recibido tu pago para el curso: <strong>${courseName}</strong> en modalidad <strong>${modality}</strong>.
+            ${practiceLabel ? `<br/>Tipo de curso: <strong>${practiceLabel}</strong>` : ''} 
           </p>
+  
           <p style="font-size: 16px; color: #333;">
             En un plazo de <strong>hasta 48 horas hábiles</strong> nos pondremos en contacto contigo para enviarte los detalles de matriculación y tus credenciales de acceso.
           </p>
@@ -429,7 +459,6 @@ export class EmailService {
         </div>
       `;
 
-      // Enviar el correo al alumno
       await sgMail.send({
         to: email,
         from: this.configService.get<string>('FROM_EMAIL'),
@@ -454,11 +483,20 @@ export class EmailService {
       phone?: string;
       courseName?: string;
       modality?: string;
+      practiceMode?: string;
     },
     errorMessage?: string,
   ) {
     try {
-      const subject = '⚠ Error en el procesamiento de pago';
+      // 👈 Convertimos el modo de prácticas a texto legible
+      const practiceLabel =
+        metadata?.practiceMode === 'con-practicas'
+          ? 'Con Prácticas'
+          : metadata?.practiceMode === 'sin-practicas'
+            ? 'Sin Prácticas'
+            : 'No especificado';
+
+      const subject = `⚠ Error en el procesamiento de pago (${practiceLabel})`; // 👈 agregado
 
       const body = `
         <div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; background-color: #fff3f3;">
@@ -479,6 +517,7 @@ export class EmailService {
             <li><strong>Teléfono:</strong> ${metadata?.phone || 'No disponible'}</li>
             <li><strong>Curso:</strong> ${metadata?.courseName || 'No disponible'}</li>
             <li><strong>Modalidad:</strong> ${metadata?.modality || 'No disponible'}</li>
+            <li><strong>Tipo de curso:</strong> ${practiceLabel}</li> <!-- 👈 agregado -->
           </ul>
   
           <p style="font-size: 16px; color: #333;">
@@ -523,18 +562,20 @@ export class EmailService {
 
   async sendWebhookErrorNotificationToControl(
     metadata?: {
-      name?: string;
-      lastname?: string;
-      email?: string;
-      phone?: string;
-      courseName?: string;
-      modality?: string;
+      practiceMode?: string;
       priceId?: string;
     },
     errorMessage?: string,
   ) {
     try {
-      const subject = '⚠ Error en la verificación del Webhook Stripe';
+      const practiceLabel =
+        metadata?.practiceMode === 'con-practicas'
+          ? 'Con Prácticas'
+          : metadata?.practiceMode === 'sin-practicas'
+            ? 'Sin Prácticas'
+            : 'No especificado';
+
+      const subject = `⚠ Error en la verificación del Webhook Stripe (${practiceLabel})`;
 
       const body = `
         <div style="font-family: 'Segoe UI', Tahoma, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px; background-color: #fff8e1;">
@@ -546,24 +587,20 @@ export class EmailService {
           <hr style="border: none; border-top: 1px solid #ccc; margin: 20px 0;" />
   
           <p style="font-size: 16px; color: #333;">
-            Ha fallado la verificación del webhook de Stripe para el siguiente alumno:
+            Se ha detectado un error durante la verificación del webhook de Stripe.
           </p>
   
           <ul style="list-style: none; padding: 0; font-size: 16px; color: #333;">
-            <li><strong>Alumno:</strong> ${metadata?.name || 'No disponible'} ${metadata?.lastname || ''}</li>
-            <li><strong>Email:</strong> ${metadata?.email || 'No disponible'}</li>
-            <li><strong>Teléfono:</strong> ${metadata?.phone || 'No disponible'}</li>
-            <li><strong>Curso:</strong> ${metadata?.courseName || 'No disponible'}</li>
-            <li><strong>Modalidad:</strong> ${metadata?.modality || 'No disponible'}</li>
+            <li><strong>Tipo de curso:</strong> ${practiceLabel}</li>
             ${metadata?.priceId ? `<li><strong>Price ID:</strong> ${metadata.priceId}</li>` : ''}
           </ul>
   
           <p style="font-size: 16px; color: #333;">
-            Mensaje de error: ${errorMessage || 'Sin detalles del error'}
+            <strong>Mensaje de error:</strong> ${errorMessage || 'Sin detalles del error'}
           </p>
   
           <p style="font-size: 16px; color: #333;">
-            ⚠ Se recomienda revisar en Stripe si el pago se ha procesado correctamente y verificar el estado de la transacción.
+            ⚠ Se recomienda revisar en Stripe si el evento fue recibido correctamente y verificar el estado de la transacción en el dashboard de Stripe.
           </p>
   
           <hr style="border: none; border-top: 1px solid #ccc; margin: 20px 0;" />
@@ -579,6 +616,7 @@ export class EmailService {
         'n.garcia@esmeraschool.com',
         'alumnos@esmeraschool.com',
       ];
+
       for (const email of adminEmails) {
         await sgMail.send({
           to: email,

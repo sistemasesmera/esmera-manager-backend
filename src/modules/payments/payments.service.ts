@@ -22,7 +22,7 @@ export class PaymentsService {
       cancel_url: 'http://esmeraschool.com/cursos/pago-cancelado',
       metadata, // aquí pasamos nombre, apellido, teléfono, curso, etc.
     });
-
+    console.log(session);
     return session.url;
   }
 
