@@ -32,6 +32,7 @@ export class PaymentsController {
       courseName: string; // Nombre del curso
       modality: string; // modalidad: Online - Presencial
       practiceMode: string; //con-practicas o sin-practicas
+      ref_code?: string; //codigo de referido para asociar con comercial (o no)
     },
   ) {
     const {
@@ -43,6 +44,7 @@ export class PaymentsController {
       modality,
       courseName,
       practiceMode,
+      ref_code,
     } = body;
 
     const url = await this.paymentsService.createCheckoutSession({
@@ -55,6 +57,7 @@ export class PaymentsController {
         modality,
         courseName,
         practiceMode,
+        ref_code,
       },
     });
 
@@ -114,7 +117,7 @@ export class PaymentsController {
           practiceMode: metadata.practiceMode, // Con Practicas / Sin Prácticas
         };
 
-        // 2️⃣ Guardar alumno en la BD
+        // 2️⃣ Guardar alumno y venta en la BD
         await this.onlineSaleCourseService.create({
           name: metadata.name,
           lastName: metadata.lastname,
@@ -125,6 +128,7 @@ export class PaymentsController {
           practiceMode: metadata.practiceMode,
           modality: metadata.modality,
           paymentReference: paymentIntentId,
+          ref_code: metadata.ref_code || null,
         });
 
         // 3️⃣ Enviar correo al alumno
