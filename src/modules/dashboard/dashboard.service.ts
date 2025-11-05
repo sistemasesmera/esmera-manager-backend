@@ -166,6 +166,92 @@ export class DashboardService {
     };
   }
 
+  async getDashboardData() {
+    const today = new Date();
+
+    // Comerciales activos
+    const users = await this.usersService.getUsersActiveForMonth();
+
+    // Contratos del mes actual
+    const contracts = await this.contractsService.getContractsForCurrentMonth();
+
+    // Agrupar contratos por comercial
+    const groupedContracts = contracts.reduce((acc, contract) => {
+      const userId = contract.user.id;
+      if (!acc[userId]) {
+        acc[userId] = {
+          nameComercial: `${contract.user.firstName} ${contract.user.lastName}`,
+          numberContracts: 0,
+          amountTotal: 0,
+          branch: contract.user.branch,
+        };
+      }
+      acc[userId].numberContracts += 1;
+      acc[userId].amountTotal += contract.coursePrice;
+      return acc;
+    }, {});
+
+    // Crear métricas por comercial
+    const metrics = users.map((user) => {
+      const userContracts = groupedContracts[user.id] || {
+        nameComercial: `${user.firstName} ${user.lastName}`,
+        numberContracts: 0,
+        amountTotal: 0,
+        branch: user.branch,
+      };
+
+      return {
+        nameComercial: userContracts.nameComercial,
+        numberContracts: userContracts.numberContracts,
+        amountTotal: userContracts.amountTotal,
+        branch: userContracts.branch,
+      };
+    });
+
+    // Dividir por sede
+    let metricsMadrid = metrics.filter((m) => m.branch?.name === 'Madrid');
+    let metricsLogroño = metrics.filter((m) => m.branch?.name === 'La Rioja');
+
+    // Ordenar: primero el que más vende
+    metricsMadrid = metricsMadrid.sort((a, b) => b.amountTotal - a.amountTotal);
+    metricsLogroño = metricsLogroño.sort(
+      (a, b) => b.amountTotal - a.amountTotal,
+    );
+
+    // Totales por sede
+    const totalMadrid = metricsMadrid.reduce(
+      (acc, m) => ({
+        totalAmount: acc.totalAmount + m.amountTotal,
+        totalContracts: acc.totalContracts + m.numberContracts,
+      }),
+      { totalAmount: 0, totalContracts: 0 },
+    );
+
+    const totalLogroño = metricsLogroño.reduce(
+      (acc, m) => ({
+        totalAmount: acc.totalAmount + m.amountTotal,
+        totalContracts: acc.totalContracts + m.numberContracts,
+      }),
+      { totalAmount: 0, totalContracts: 0 },
+    );
+
+    // Total general
+    const totalGeneral = {
+      totalAmount: totalMadrid.totalAmount + totalLogroño.totalAmount,
+      totalContracts: totalMadrid.totalContracts + totalLogroño.totalContracts,
+    };
+
+    // Respuesta final organizada
+    return {
+      today: today.toISOString().split('T')[0],
+      ventas: {
+        general: totalGeneral,
+        madrid: { ...totalMadrid, metrics: metricsMadrid },
+        logroño: { ...totalLogroño, metrics: metricsLogroño },
+      },
+    };
+  }
+
   // Método para actualizar el objetivo común
   async updateCommonGoal(newGoal: UpdateCommonGoalDto) {
     this.setCommonGoal(newGoal);
