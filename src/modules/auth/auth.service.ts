@@ -65,8 +65,8 @@ export class AuthService {
 
     const payload: JwtPayload = {
       email: user.email,
-      role: user.role,
       id: user.id,
+      role: user.role,
       branch: {
         id: user.branch.id,
         name: user.branch.name,
@@ -74,6 +74,7 @@ export class AuthService {
       },
     };
     const accessToken = this.jwtService.sign(payload);
+
     return {
       user,
       accessToken,
@@ -83,7 +84,7 @@ export class AuthService {
   async validateUser(email: string, password: string): Promise<User | null> {
     const user = await this.userRepository.findOne({
       where: { email },
-      relations: ['branch'], // esto es lo importante
+      relations: ['branch'],
       select: [
         'id',
         'email',
@@ -91,9 +92,11 @@ export class AuthService {
         'role',
         'firstName',
         'lastName',
+        'username',
         'active',
-      ], // Incluye explícitamente el campo `password`
+      ],
     });
+
     if (!user.active) {
       throw new UnauthorizedException('Usuario inactivo');
     }
