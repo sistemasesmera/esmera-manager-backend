@@ -31,4 +31,7 @@ export class CreateCommercialDto {
 
   @IsUUID('4', { message: 'Sede inválida' })
   branchId: string;
+
+  @IsString()
+  username: string;
 }

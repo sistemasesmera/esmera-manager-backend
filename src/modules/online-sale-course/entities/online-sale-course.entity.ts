@@ -4,6 +4,8 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import {
   IsString,
@@ -12,6 +14,7 @@ import {
   IsOptional,
   IsNumber,
 } from 'class-validator';
+import { User } from '../../users/entities/user.entity';
 
 @Entity()
 export class OnlineSaleCourse {
@@ -60,6 +63,13 @@ export class OnlineSaleCourse {
   @IsString()
   @IsOptional()
   paymentReference?: string; // ID del pago externo (Stripe)
+
+  @Column({ length: 50, nullable: true })
+  ref_code?: string; // lo que vino del frontend, aunque no exista el comercial
+
+  @ManyToOne(() => User, { nullable: true, eager: true })
+  @JoinColumn({ name: 'commercial_id' })
+  commercial?: User; // relación directa con comercial
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;

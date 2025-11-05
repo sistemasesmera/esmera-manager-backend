@@ -35,7 +35,7 @@ export class UsersService {
 
   //Crear un comercial
   async createCommercial(createCommercialDto: CreateCommercialDto) {
-    const { firstName, lastName, email, password, role, branchId } =
+    const { firstName, lastName, email, password, role, branchId, username } =
       createCommercialDto;
 
     if (role === 'ADMIN') {
@@ -69,8 +69,9 @@ export class UsersService {
       lastName: formatLastName,
       email: normalizedEmail,
       password: hashedPassword,
+      username: username.trim().toLowerCase(),
       role,
-      branch, // Asignar relación
+      branch,
     });
 
     await this.usersRepository.save(newUser);

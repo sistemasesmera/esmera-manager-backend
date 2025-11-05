@@ -11,8 +11,8 @@ export interface CreateOnlineSaleCourseDto {
   phone: string;
   nameCourse: string;
   amount: number;
-  practiceMode: string; // nuevo campo
-  modality: string; // nuevo campo
+  practiceMode: string;
+  modality: string;
   paymentReference?: string;
 }
 

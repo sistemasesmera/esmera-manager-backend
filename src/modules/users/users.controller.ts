@@ -37,6 +37,7 @@ export class UsersController {
   ): Promise<User> {
     return this.usersService.createCommercial(createCommercialDto);
   }
+
   //Endpoint para traer los comerciales
   @Get('commercials')
   @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS)
