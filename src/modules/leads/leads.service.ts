@@ -132,7 +132,7 @@ export class LeadsService {
   }
   async createOnline(createLeadDto: CreateLeadOnlineDto) {
     await this.createInMondayOnline(createLeadDto);
-    //this.sendEmails(createLeadDto);
+    this.sendEmails(createLeadDto);
 
     return {
       message: 'ok',
