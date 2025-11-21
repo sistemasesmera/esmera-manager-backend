@@ -6,9 +6,16 @@ import { CreateLeadDto } from './dto/create-lead.dto';
 export class LeadsController {
   constructor(private readonly leadsService: LeadsService) {}
 
+  //Para cursos presenciales - (lleva a tablero principal)
   @Post()
   async create(@Body() createLeadDto: CreateLeadDto) {
     return await this.leadsService.create(createLeadDto);
+  }
+
+  //Para cursos online - (lleva a tablero de cursos online)
+  @Post('online')
+  async createLead(@Body() createLeadDto: CreateLeadDto) {
+    return await this.leadsService.createOnline(createLeadDto);
   }
 
   @Get('validate-item')
