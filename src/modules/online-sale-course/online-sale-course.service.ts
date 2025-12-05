@@ -15,7 +15,7 @@ export interface CreateOnlineSaleCourseDto {
   practiceMode: string;
   modality: string;
   paymentReference?: string;
-  ref_code: string;
+  ref_code?: string;
 }
 
 @Injectable()
@@ -31,20 +31,23 @@ export class OnlineSaleCourseService {
    * Crear un registro de venta online de curso
    */
   async create(dto: CreateOnlineSaleCourseDto): Promise<OnlineSaleCourse> {
-    // Buscar usuario (comercial) por ref_code
-    const user = await this.userRepo.findOne({
-      where: { username: dto.ref_code },
-    });
+    // Buscar usuario (comercial) por ref_code\
 
-    console.log(`user: ${user}`);
+    const rawRef = dto.ref_code ?? '';
+    const ref =
+      typeof rawRef === 'string' ? rawRef.trim() : String(rawRef).trim();
+
+    console.log(ref); //aqui llega undefined
+    const user = await this.userRepo.findOne({
+      where: { username: ref },
+    });
+    console.log(user);
 
     // Crear la venta
     const sale = this.onlineSaleRepo.create({
       ...dto,
       commercial: user || null, // asociar si existe
     });
-
-    console.log(`venta: ${sale}`);
 
     // Guardar la venta
     return this.onlineSaleRepo.save(sale);

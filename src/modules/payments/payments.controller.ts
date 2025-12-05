@@ -108,8 +108,6 @@ export class PaymentsController {
         // 1️⃣ Extraer datos de la sesión
         const metadata = session.metadata || {};
 
-        console.log('metadata: ' + metadata);
-
         const alumn = {
           name: metadata.name,
           lastname: metadata.lastname,
@@ -131,10 +129,7 @@ export class PaymentsController {
           practiceMode: metadata.practiceMode,
           modality: metadata.modality,
           paymentReference: paymentIntentId,
-          ref_code:
-            metadata.ref_code && metadata.ref_code.trim() !== ''
-              ? metadata.ref_code.trim()
-              : null,
+          ref_code: metadata.ref_code,
         });
 
         // 3️⃣ Enviar correo al alumno
