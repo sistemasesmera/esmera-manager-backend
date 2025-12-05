@@ -5,6 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { UpdateCommonGoalDto } from './dto/update-common.goal.dto';
 import { GoalsService } from '../goals/goals.service';
+import { OnlineSaleCourseService } from '../online-sale-course/online-sale-course.service';
 
 @Injectable()
 export class DashboardService {
@@ -20,6 +21,7 @@ export class DashboardService {
     private readonly usersService: UsersService,
     private readonly contractsService: ContractsService,
     private readonly goalsService: GoalsService,
+    private readonly onlineSaleCourseService: OnlineSaleCourseService,
   ) {}
 
   // Leer el archivo JSON y devolver el objetivo común
@@ -175,6 +177,10 @@ export class DashboardService {
     // Contratos del mes actual
     const contracts = await this.contractsService.getContractsForCurrentMonth();
 
+    // Ventas Online
+    const salesOnline =
+      await this.onlineSaleCourseService.getOnlineSalesForCurrentMonth();
+
     // Agrupar contratos por comercial
     const groupedContracts = contracts.reduce((acc, contract) => {
       const userId = contract.user.id;
@@ -240,6 +246,134 @@ export class DashboardService {
       totalAmount: totalMadrid.totalAmount + totalLogroño.totalAmount,
       totalContracts: totalMadrid.totalContracts + totalLogroño.totalContracts,
     };
+    // ---------------------------
+    // AGRUPAR VENTAS ONLINE POR COMMERCIAL_ID (usar commercial_id de la tabla)
+    // ---------------------------
+    // groupedOnline: key = commercial_id (string) OR 'null' for no commercial
+    const groupedOnline: Record<
+      string,
+      {
+        nameComercial: string | null;
+        numberContracts: number;
+        amountTotal: number;
+        branch?: any;
+      }
+    > = {};
+
+    for (const s of salesOnline) {
+      // usa commercial_id directamente (asegúrate que tu repo trae commercial_id)
+      const commercialIdRaw =
+        (s as any).commercial_id ?? (s as any).commercial?.id ?? null;
+      const key =
+        commercialIdRaw !== null && commercialIdRaw !== undefined
+          ? String(commercialIdRaw)
+          : 'null';
+
+      if (!groupedOnline[key]) {
+        // si la venta trae relación commercial, intenta sacar nombre, si no lo dejarás null y lo resolveremos al unir con users
+        const commercialRel = (s as any).commercial;
+        groupedOnline[key] = {
+          nameComercial:
+            key === 'null'
+              ? null
+              : commercialRel
+                ? `${commercialRel.firstName ?? ''} ${commercialRel.lastName ?? ''}`.trim() ||
+                  (commercialRel.username ?? null)
+                : null,
+          numberContracts: 0,
+          amountTotal: 0,
+          branch: commercialRel?.branch ?? undefined,
+        };
+      }
+
+      groupedOnline[key].numberContracts += 1;
+      groupedOnline[key].amountTotal += Number((s as any).amount ?? 0);
+    }
+
+    // Convertir groupedOnline a array (guardando keyStr)
+    const onlineMetricsFromSales = Object.entries(groupedOnline).map(
+      ([key, val]) => ({
+        keyStr: key, // 'null' o id as string
+        commercialId: key === 'null' ? null : Number(key),
+        nameComercial: val.nameComercial,
+        numberContracts: val.numberContracts,
+        amountTotal: val.amountTotal,
+        branch: val.branch,
+      }),
+    );
+
+    // Map<string, any> con claves string normalizadas
+    const onlineMetricsMap = new Map<string, any>();
+    for (const row of onlineMetricsFromSales) {
+      onlineMetricsMap.set(row.keyStr, row);
+    }
+
+    // Resultado final agrupado
+    const onlineMetrics: {
+      nameComercial: string | null;
+      numberContracts: number;
+      amountTotal: number;
+      branch?: any;
+    }[] = [];
+
+    // 1) Añadir siempre 'Sin Comercial' como primer elemento (con 0s)
+    onlineMetrics.push({
+      nameComercial: null, // frontend deberá mostrar "Sin Comercial"
+      numberContracts: onlineMetricsMap.get('null')?.numberContracts ?? 0,
+      amountTotal: onlineMetricsMap.get('null')?.amountTotal ?? 0,
+      branch: null,
+    });
+    // Si existía la entrada 'null' en el map, la borramos porque ya la incorporamos
+    if (onlineMetricsMap.has('null')) onlineMetricsMap.delete('null');
+
+    // 2) Añadir comerciales activos (users) — usar id comparando con commercial_id
+    for (const user of users) {
+      const key = String(user.id);
+      const existing = onlineMetricsMap.get(key);
+
+      if (existing) {
+        onlineMetrics.push({
+          nameComercial:
+            existing.nameComercial ?? `${user.firstName} ${user.lastName}`,
+          numberContracts: existing.numberContracts,
+          amountTotal: existing.amountTotal,
+          branch: existing.branch ?? user.branch,
+        });
+        onlineMetricsMap.delete(key);
+      } else {
+        // comercial activo sin ventas online
+        onlineMetrics.push({
+          nameComercial: `${user.firstName} ${user.lastName}`,
+          numberContracts: 0,
+          amountTotal: 0,
+          branch: user.branch,
+        });
+      }
+    }
+
+    // 3) Añadir comerciales no activos que igual vendieron (quedan en onlineMetricsMap)
+    for (const [k, v] of onlineMetricsMap.entries()) {
+      // k es string de id (no 'null', ya borrada)
+      onlineMetrics.push({
+        nameComercial: v.nameComercial ?? `Comercial ${k}`,
+        numberContracts: v.numberContracts,
+        amountTotal: v.amountTotal,
+        branch: v.branch,
+      });
+    }
+
+    // 4) Ordenar: mantenemos la primera fila ("Sin Comercial") fija, ordenamos el resto por amount desc
+    const sinComercial = onlineMetrics.length > 0 ? onlineMetrics[0] : null;
+    const rest = onlineMetrics.slice(1);
+    rest.sort((a, b) => b.amountTotal - a.amountTotal);
+    const finalOnlineMetrics = sinComercial ? [sinComercial, ...rest] : rest;
+
+    // Totales online
+    const onlineTotal = salesOnline.reduce(
+      (s, x) => s + Number((x as any).amount ?? 0),
+      0,
+    );
+    const onlineCount = salesOnline.length;
 
     // Respuesta final organizada
     return {
@@ -248,6 +382,17 @@ export class DashboardService {
         general: totalGeneral,
         madrid: { ...totalMadrid, metrics: metricsMadrid },
         logroño: { ...totalLogroño, metrics: metricsLogroño },
+        online: {
+          data: salesOnline, // raw list (si quieres quitarla puedes eliminarla)
+          total: onlineTotal,
+          count: onlineCount,
+          metrics: finalOnlineMetrics.map((m) => ({
+            nameComercial: m.nameComercial,
+            amountTotal: m.amountTotal,
+            numberContracts: m.numberContracts,
+            branch: m.branch,
+          })),
+        },
       },
     };
   }

@@ -36,11 +36,12 @@ export class ContractsController {
   @Get()
   getContracts(
     @Query(new ValidationPipe({ transform: true, whitelist: true }))
-    paginationDto: PaginationDto,
+    query: PaginationDto,
   ) {
-    const { page, limit } = paginationDto;
-    return this.contractsService.getAllContracts(page, limit);
+    const { page, limit, q } = query;
+    return this.contractsService.getAllContracts(page, limit, q);
   }
+
   @Get('my-contracts')
   @UseGuards(JwtAuthGuard)
   getMyContracts(

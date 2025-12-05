@@ -1,7 +1,7 @@
 // src/online-sale-course/online-sale-course.service.ts
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { OnlineSaleCourse } from './entities/online-sale-course.entity';
 import { User } from '../users/entities/user.entity';
 
@@ -53,5 +53,42 @@ export class OnlineSaleCourseService {
     return this.onlineSaleRepo.find({
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async getOnlineSalesForCurrentMonth(): Promise<OnlineSaleCourse[]> {
+    const today = new Date();
+    const currentMonth = today.getMonth(); // Mes actual (0-11)
+    const currentYear = today.getFullYear(); // Año actual
+
+    // Calcular el rango del mes actual
+    const startOfMonth = new Date(currentYear, currentMonth, 1, 0, 0, 0); // Primer segundo del mes
+    const endOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59); // Último segundo del mes
+
+    // Obtener ventas online del mes actual
+    const sales = await this.onlineSaleRepo.find({
+      where: {
+        createdAt: Between(startOfMonth, endOfMonth),
+      },
+      select: {
+        id: true, // ID de la venta
+        name: true,
+        lastName: true,
+        practiceMode: true,
+        nameCourse: true,
+        amount: true, // Monto pagado del curso online
+        createdAt: true, // Fecha de creación de la venta
+        ref_code: true,
+        commercial: {
+          id: true, // ID del comercial (o null)
+          firstName: true, // Si tiene comercial
+          lastName: true,
+        },
+      },
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+
+    return sales;
   }
 }

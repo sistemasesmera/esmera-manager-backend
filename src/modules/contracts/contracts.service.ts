@@ -312,20 +312,48 @@ export class ContractsService {
     };
   }
 
-  async getAllContracts(page = 1, limit = 10) {
-    const [data, total] = await this.contractRepository.findAndCount({
-      relations: ['user', 'course', 'alumn'],
-      skip: (page - 1) * limit,
-      take: limit,
-      order: { createdAt: 'DESC' },
-    });
+  async getAllContracts(page = 1, limit = 10, q?: string) {
+    const take = Math.max(1, limit);
+    const skip = Math.max(0, (Math.max(1, page) - 1) * take);
+
+    const qb = this.contractRepository
+      .createQueryBuilder('c')
+      .leftJoinAndSelect('c.alumn', 'a')
+      .leftJoinAndSelect('c.user', 'user')
+      .leftJoinAndSelect('c.course', 'course')
+      .leftJoinAndSelect('c.branch', 'branch');
+
+    if (q && q.trim().length > 0) {
+      const likeParam = `%${q.trim().toLowerCase()}%`;
+
+      // Búsqueda case-insensitive sobre firstName, lastName y "firstName lastName"
+      qb.andWhere(
+        `(
+           LOWER(a.firstName) LIKE :like
+           OR LOWER(a.lastName) LIKE :like
+           OR LOWER(CONCAT(a.firstName, ' ', a.lastName)) LIKE :like
+           OR LOWER(c.name) LIKE :like
+         )`,
+        { like: likeParam },
+      );
+
+      // Si usas Postgres y quieres usar ILIKE:
+      // qb.andWhere(
+      //   `(a.firstName ILIKE :like OR a.lastName ILIKE :like OR (a.firstName || ' ' || a.lastName) ILIKE :like OR c.name ILIKE :like)`,
+      //   { like: `%${q.trim()}%` }
+      // );
+    }
+
+    qb.orderBy('c.createdAt', 'DESC').skip(skip).take(take);
+
+    const [data, total] = await qb.getManyAndCount();
 
     return {
       data,
       total,
       page,
-      limit,
-      totalPages: Math.ceil(total / limit),
+      limit: take,
+      totalPages: Math.max(1, Math.ceil(total / take)),
     };
   }
 }
