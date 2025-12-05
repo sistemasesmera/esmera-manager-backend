@@ -177,12 +177,23 @@ export class DashboardService {
     // Contratos del mes actual
     const contracts = await this.contractsService.getContractsForCurrentMonth();
 
-    // Ventas Online
+    // Ventas Online (raw)
     const salesOnline =
       await this.onlineSaleCourseService.getOnlineSalesForCurrentMonth();
 
-    // Agrupar contratos por comercial
-    const groupedContracts = contracts.reduce((acc, contract) => {
+    // ---------------------------
+    // Totales online (los necesitamos antes de calcular totalGeneral)
+    // ---------------------------
+    const onlineTotal = salesOnline.reduce(
+      (s, x) => s + Number((x as any).amount ?? 0),
+      0,
+    );
+    const onlineCount = salesOnline.length;
+
+    // ---------------------------
+    // Agrupar contratos por comercial (contratos)
+    // ---------------------------
+    const groupedContracts = contracts.reduce((acc: any, contract: any) => {
       const userId = contract.user.id;
       if (!acc[userId]) {
         acc[userId] = {
@@ -197,8 +208,8 @@ export class DashboardService {
       return acc;
     }, {});
 
-    // Crear métricas por comercial
-    const metrics = users.map((user) => {
+    // Crear métricas por comercial (solo contratos)
+    const metrics = users.map((user: any) => {
       const userContracts = groupedContracts[user.id] || {
         nameComercial: `${user.firstName} ${user.lastName}`,
         numberContracts: 0,
@@ -214,17 +225,16 @@ export class DashboardService {
       };
     });
 
-    // Dividir por sede
+    // Dividir por sede y ordenar
     let metricsMadrid = metrics.filter((m) => m.branch?.name === 'Madrid');
     let metricsLogroño = metrics.filter((m) => m.branch?.name === 'La Rioja');
 
-    // Ordenar: primero el que más vende
     metricsMadrid = metricsMadrid.sort((a, b) => b.amountTotal - a.amountTotal);
     metricsLogroño = metricsLogroño.sort(
       (a, b) => b.amountTotal - a.amountTotal,
     );
 
-    // Totales por sede
+    // Totales por sede (solo contratos)
     const totalMadrid = metricsMadrid.reduce(
       (acc, m) => ({
         totalAmount: acc.totalAmount + m.amountTotal,
@@ -241,15 +251,18 @@ export class DashboardService {
       { totalAmount: 0, totalContracts: 0 },
     );
 
-    // Total general
-    const totalGeneral = {
-      totalAmount: totalMadrid.totalAmount + totalLogroño.totalAmount,
-      totalContracts: totalMadrid.totalContracts + totalLogroño.totalContracts,
-    };
+    // Total general: sumar también las ventas online al monto total
+    const totalAmountCombined =
+      totalMadrid.totalAmount + totalLogroño.totalAmount + onlineTotal;
+
+    const totalContractsOnly =
+      totalMadrid.totalContracts + totalLogroño.totalContracts;
+
+    const totalOnlineSales = onlineCount; // contratos + ventas online (número total de ventas)
+
     // ---------------------------
     // AGRUPAR VENTAS ONLINE POR COMMERCIAL_ID (usar commercial_id de la tabla)
     // ---------------------------
-    // groupedOnline: key = commercial_id (string) OR 'null' for no commercial
     const groupedOnline: Record<
       string,
       {
@@ -261,7 +274,6 @@ export class DashboardService {
     > = {};
 
     for (const s of salesOnline) {
-      // usa commercial_id directamente (asegúrate que tu repo trae commercial_id)
       const commercialIdRaw =
         (s as any).commercial_id ?? (s as any).commercial?.id ?? null;
       const key =
@@ -270,7 +282,6 @@ export class DashboardService {
           : 'null';
 
       if (!groupedOnline[key]) {
-        // si la venta trae relación commercial, intenta sacar nombre, si no lo dejarás null y lo resolveremos al unir con users
         const commercialRel = (s as any).commercial;
         groupedOnline[key] = {
           nameComercial:
@@ -290,10 +301,9 @@ export class DashboardService {
       groupedOnline[key].amountTotal += Number((s as any).amount ?? 0);
     }
 
-    // Convertir groupedOnline a array (guardando keyStr)
     const onlineMetricsFromSales = Object.entries(groupedOnline).map(
       ([key, val]) => ({
-        keyStr: key, // 'null' o id as string
+        keyStr: key,
         commercialId: key === 'null' ? null : Number(key),
         nameComercial: val.nameComercial,
         numberContracts: val.numberContracts,
@@ -302,13 +312,11 @@ export class DashboardService {
       }),
     );
 
-    // Map<string, any> con claves string normalizadas
     const onlineMetricsMap = new Map<string, any>();
     for (const row of onlineMetricsFromSales) {
       onlineMetricsMap.set(row.keyStr, row);
     }
 
-    // Resultado final agrupado
     const onlineMetrics: {
       nameComercial: string | null;
       numberContracts: number;
@@ -316,17 +324,16 @@ export class DashboardService {
       branch?: any;
     }[] = [];
 
-    // 1) Añadir siempre 'Sin Comercial' como primer elemento (con 0s)
+    // 'Sin Comercial' always first (with zeros if none)
     onlineMetrics.push({
-      nameComercial: null, // frontend deberá mostrar "Sin Comercial"
+      nameComercial: null,
       numberContracts: onlineMetricsMap.get('null')?.numberContracts ?? 0,
       amountTotal: onlineMetricsMap.get('null')?.amountTotal ?? 0,
       branch: null,
     });
-    // Si existía la entrada 'null' en el map, la borramos porque ya la incorporamos
     if (onlineMetricsMap.has('null')) onlineMetricsMap.delete('null');
 
-    // 2) Añadir comerciales activos (users) — usar id comparando con commercial_id
+    // Add active users (comerciales)
     for (const user of users) {
       const key = String(user.id);
       const existing = onlineMetricsMap.get(key);
@@ -341,7 +348,6 @@ export class DashboardService {
         });
         onlineMetricsMap.delete(key);
       } else {
-        // comercial activo sin ventas online
         onlineMetrics.push({
           nameComercial: `${user.firstName} ${user.lastName}`,
           numberContracts: 0,
@@ -351,9 +357,8 @@ export class DashboardService {
       }
     }
 
-    // 3) Añadir comerciales no activos que igual vendieron (quedan en onlineMetricsMap)
+    // Add non-active users who sold
     for (const [k, v] of onlineMetricsMap.entries()) {
-      // k es string de id (no 'null', ya borrada)
       onlineMetrics.push({
         nameComercial: v.nameComercial ?? `Comercial ${k}`,
         numberContracts: v.numberContracts,
@@ -362,28 +367,25 @@ export class DashboardService {
       });
     }
 
-    // 4) Ordenar: mantenemos la primera fila ("Sin Comercial") fija, ordenamos el resto por amount desc
+    // Keep first item (Sin Comercial) fixed, sort rest desc by amount
     const sinComercial = onlineMetrics.length > 0 ? onlineMetrics[0] : null;
     const rest = onlineMetrics.slice(1);
     rest.sort((a, b) => b.amountTotal - a.amountTotal);
     const finalOnlineMetrics = sinComercial ? [sinComercial, ...rest] : rest;
 
-    // Totales online
-    const onlineTotal = salesOnline.reduce(
-      (s, x) => s + Number((x as any).amount ?? 0),
-      0,
-    );
-    const onlineCount = salesOnline.length;
-
-    // Respuesta final organizada
+    // Final response
     return {
       today: today.toISOString().split('T')[0],
       ventas: {
-        general: totalGeneral,
+        general: {
+          totalAmount: totalAmountCombined, // contratos + online (importe)
+          totalContracts: totalContractsOnly, // solo contratos
+          totalOnlineSales: totalOnlineSales, // contratos + ventas online (cantidad)
+        },
         madrid: { ...totalMadrid, metrics: metricsMadrid },
         logroño: { ...totalLogroño, metrics: metricsLogroño },
         online: {
-          data: salesOnline, // raw list (si quieres quitarla puedes eliminarla)
+          data: salesOnline,
           total: onlineTotal,
           count: onlineCount,
           metrics: finalOnlineMetrics.map((m) => ({
