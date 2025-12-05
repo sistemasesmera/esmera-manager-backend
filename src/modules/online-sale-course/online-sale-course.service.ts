@@ -36,11 +36,15 @@ export class OnlineSaleCourseService {
       where: { username: dto.ref_code },
     });
 
+    console.log(`user: ${user}`);
+
     // Crear la venta
     const sale = this.onlineSaleRepo.create({
       ...dto,
       commercial: user || null, // asociar si existe
     });
+
+    console.log(`venta: ${sale}`);
 
     // Guardar la venta
     return this.onlineSaleRepo.save(sale);
