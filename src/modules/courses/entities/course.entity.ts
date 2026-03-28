@@ -17,6 +17,10 @@ export class Course {
   @Column({ length: 100 })
   name: string;
 
+  // ✅ Nuevo campo: activo / inactivo
+  @Column({ default: true })
+  isActive: boolean;
+
   // Relación uno a muchos con contratos (Un curso puede tener muchos contratos)
   @OneToMany(() => Contract, (contract) => contract.course)
   contracts: Contract[];

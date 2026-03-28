@@ -22,7 +22,9 @@ export class CoursesService {
   }
 
   async findAll() {
-    return await this.courseRepository.find();
+    return await this.courseRepository.find({
+      where: { isActive: true },
+    });
   }
 
   // Método para obtener todos los cursos con paginación
@@ -81,5 +83,26 @@ export class CoursesService {
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     return uuidRegex.test(id);
+  }
+
+  async updateStatus(id: string, isActive: boolean): Promise<Course> {
+    // Validar UUID
+    if (!this.isValidUUID(id)) {
+      throw new NotFoundException(`ID ${id} no es un UUID válido`);
+    }
+
+    // Buscar curso
+    const course = await this.courseRepository.findOne({
+      where: { id },
+    });
+
+    if (!course) {
+      throw new NotFoundException(`Curso con ID ${id} no encontrado`);
+    }
+
+    // ✅ Actualizar estado directamente
+    course.isActive = isActive;
+
+    return this.courseRepository.save(course);
   }
 }

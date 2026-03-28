@@ -7,6 +7,7 @@ import {
   Query,
   Param,
   Put,
+  Patch,
 } from '@nestjs/common';
 import { CoursesService } from './courses.service';
 import { CreateCourseDto } from './dto/create-course.dto';
@@ -39,5 +40,10 @@ export class CoursesController {
   @Put(':id')
   update(@Param('id') id: string, @Body() updateCourseDto: UpdateCourseDto) {
     return this.coursesService.update(id, updateCourseDto);
+  }
+
+  @Patch(':id/status')
+  updateStatus(@Param('id') id: string, @Body('isActive') isActive: boolean) {
+    return this.coursesService.updateStatus(id, isActive);
   }
 }
