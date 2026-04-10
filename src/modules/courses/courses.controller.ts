@@ -29,6 +29,8 @@ export class CoursesController {
     paginationDto: PaginationDto,
   ) {
     const { page, limit, searchTerm } = paginationDto; // Extrae name
+
+    console.log('first');
     return this.coursesService.findAllCourses(page, limit, searchTerm);
   }
 
