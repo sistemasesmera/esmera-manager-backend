@@ -92,4 +92,8 @@ Create Migration (Unix) = npm run migration:create:unix --name=CreateTableUsers
 Para las migraciones
 1. Crearla. npm run migration:create --Name= (Nombre)
 1. Cambiar el nombre de el comando de npm run migratiom:generate y luego ejecutarlo
-1. subir npm run migratiom:run 
+1. subir npm run migratiom:run
+
+## Acceso Claude Code
+
+Claude Code tiene acceso configurado a este repositorio (push de prueba: 2026-06-12).
