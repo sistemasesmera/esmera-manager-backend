@@ -8,15 +8,13 @@ import {
 } from 'class-validator';
 import { LeadCourseCategory } from '../entities/lead-enums';
 
-export class UpdateLeadDto {
-  @IsOptional()
+export class CreateLeadManualDto {
   @IsString()
-  name?: string;
+  name: string;
 
-  @IsOptional()
   @IsString()
   @Matches(/^\d+$/, { message: 'El teléfono solo puede contener números' })
-  phone?: string;
+  phone: string;
 
   @IsOptional()
   @IsEmail()
@@ -33,10 +31,14 @@ export class UpdateLeadDto {
   categoryCourse?: LeadCourseCategory;
 
   @IsOptional()
-  @IsString()
-  notes?: string;
+  @IsUUID()
+  branchId?: string;
 
   @IsOptional()
   @IsUUID()
-  branchId?: string;
+  assignedToId?: string;
+
+  @IsOptional()
+  @IsString()
+  notes?: string;
 }

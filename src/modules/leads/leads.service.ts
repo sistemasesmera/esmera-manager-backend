@@ -1,12 +1,45 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  ConflictException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { EmailService } from '../email/email.service';
 import axios from 'axios';
 import { CreateLeadOnlineDto } from './dto/create-lead-online';
+import { CreateLeadManualDto } from './dto/create-lead-manual.dto';
+import { UpdateLeadDto } from './dto/update-lead.dto';
+import { AssignLeadDto } from './dto/assign-lead.dto';
+import { ChangeLeadStatusDto } from './dto/change-status.dto';
+import { FilterLeadDto } from './dto/filter-lead.dto';
+import { StatsLeadDto } from './dto/stats-lead.dto';
+import { ConvertLeadDto } from './dto/convert-lead.dto';
+import { Lead } from './entities/lead.entity';
+import { LeadCourseCategory, LeadSource, LeadStatus } from './entities/lead-enums';
+import { Branch } from '../branch/entities/branch.entity';
+import { User } from '../users/entities/user.entity';
+import { Alumn } from '../alumn/entities/alumn.entity';
+import { AlumnService } from '../alumn/alumn.service';
+import { UserRoles } from 'src/constants/Roles.enum';
+import { AuthenticatedUser } from 'src/interfaces/authenticated-user.interface';
 
 @Injectable()
 export class LeadsService {
-  constructor(private readonly emailService: EmailService) {}
+  constructor(
+    private readonly emailService: EmailService,
+    private readonly alumnService: AlumnService,
+    @InjectRepository(Lead)
+    private readonly leadRepository: Repository<Lead>,
+    @InjectRepository(Branch)
+    private readonly branchRepository: Repository<Branch>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(Alumn)
+    private readonly alumnRepository: Repository<Alumn>,
+  ) {}
 
   //Function para crear item en tablero principal
   async createInMonday(dto: CreateLeadDto) {
@@ -36,8 +69,8 @@ export class LeadsService {
     const query = `
       mutation {
         create_item (
-          board_id: ${boardId}, 
-          item_name: "${dto.name}", 
+          board_id: ${boardId},
+          item_name: "${dto.name}",
           group_id: "grupo_nuevo_mkkda4fg",
           column_values: "${columnValuesString.replace(/"/g, '\\"')}"
         ) {
@@ -92,8 +125,8 @@ export class LeadsService {
     const query = `
   mutation {
     create_item (
-      board_id: ${boardIdCursosOnline}, 
-      item_name: "${dto.name}", 
+      board_id: ${boardIdCursosOnline},
+      item_name: "${dto.name}",
       group_id: "grupo_nuevo_mkkda4fg",
       column_values: "${columnValuesString.replace(/"/g, '\\"')}"
     ) {
@@ -125,18 +158,43 @@ export class LeadsService {
   async create(createLeadDto: CreateLeadDto) {
     await this.createInMonday(createLeadDto);
     this.sendEmails(createLeadDto);
+    await this.persistLead(createLeadDto, LeadSource.WEB);
 
     return {
       message: 'ok',
     };
   }
+
   async createOnline(createLeadDto: CreateLeadOnlineDto) {
     await this.createInMondayOnline(createLeadDto);
     this.sendEmails(createLeadDto);
+    await this.persistLead(createLeadDto, LeadSource.WEB_ONLINE);
 
     return {
       message: 'ok',
     };
+  }
+
+  // Guarda el lead en nuestra BD para alimentar el CRM. No debe romper el flujo
+  // web -> Monday + email si algo falla aquí.
+  private async persistLead(
+    dto: CreateLeadDto | CreateLeadOnlineDto,
+    source: LeadSource,
+  ) {
+    try {
+      const lead = this.leadRepository.create({
+        name: dto.name,
+        phone: dto.phone,
+        email: dto.email,
+        nameCourse: dto.nameCourse,
+        categoryCourse: dto.categoryCourse as LeadCourseCategory,
+        source,
+        status: LeadStatus.NUEVO,
+      });
+      await this.leadRepository.save(lead);
+    } catch (error) {
+      console.error('Error al guardar el lead en la base de datos:', error);
+    }
   }
 
   private async sendEmails(dto: CreateLeadDto) {
@@ -155,100 +213,276 @@ export class LeadsService {
     );
   }
 
-  async validateItem(itemId: string): Promise<{
-    exists: boolean;
-    item: any | null;
-    boardId: string | null;
-    statusColumnId: string | null;
-  }> {
-    // 1️⃣ Fetch the item and its board
-    const itemQuery = `
-      query {
-        items(ids: ${itemId}) {
-          id
-          name
-          board {
-            id
-            name
-          }
-          created_at
-          updated_at
-        }
+  // Crea un lead manualmente desde el CRM (comercial/admin)
+  async createManual(dto: CreateLeadManualDto, user: AuthenticatedUser) {
+    let assignedTo: User | undefined;
+    let branch: Branch | undefined;
+
+    if (dto.assignedToId) {
+      assignedTo = await this.userRepository.findOne({
+        where: { id: dto.assignedToId },
+      });
+      if (!assignedTo) {
+        throw new NotFoundException('Comercial no encontrado');
       }
-    `;
-
-    try {
-      const itemResponse = await axios.post(
-        'https://api.monday.com/v2',
-        { query: itemQuery },
-        {
-          headers: {
-            Authorization:
-              'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjMyOTM2NDAwNywiYWFpIjoxMSwidWlkIjoyMjc4MDczOCwiaWFkIjoiMjAyNC0wMy0wNlQxMTo0ODowMi4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6OTI2NzAyMSwicmduIjoidXNlMSJ9.LUVRzuV-inO6CRETAgBi1Pc9Df-OGJ45IqsaSB4uG_Y',
-            'Content-Type': 'application/json',
-          },
-        },
-      );
-
-      const items = itemResponse.data?.data?.items || [];
-      const item = items.length > 0 ? items[0] : null;
-
-      if (!item) {
-        return {
-          exists: false,
-          item: null,
-          boardId: null,
-          statusColumnId: null,
-        };
-      }
-
-      const boardId = item.board?.id ?? null;
-
-      // 2️⃣ Fetch board columns to get the "ESTADO" column id
-      let statusColumnId: string | null = null;
-
-      if (boardId) {
-        const columnsQuery = `
-          query {
-            boards(ids: ${boardId}) {
-              columns {
-                id
-                title
-                type
-              }
-            }
-          }
-        `;
-
-        const columnsResponse = await axios.post(
-          'https://api.monday.com/v2',
-          { query: columnsQuery },
-          {
-            headers: {
-              Authorization:
-                'eyJhbGciOiJIUzI1NiJ9.eyJ0aWQiOjMyOTM2NDAwNywiYWFpIjoxMSwidWlkIjoyMjc4MDczOCwiaWFkIjoiMjAyNC0wMy0wNlQxMTo0ODowMi4wMDBaIiwicGVyIjoibWU6d3JpdGUiLCJhY3RpZCI6OTI2NzAyMSwicmduIjoidXNlMSJ9.LUVRzuV-inO6CRETAgBi1Pc9Df-OGJ45IqsaSB4uG_Y',
-              'Content-Type': 'application/json',
-            },
-          },
-        );
-
-        const columns = columnsResponse.data?.data?.boards[0]?.columns || [];
-        const statusColumn = columns.find((col: any) => col.title === 'ESTADO');
-        statusColumnId = statusColumn?.id ?? null;
-      }
-
-      return {
-        exists: true,
-        item,
-        boardId,
-        statusColumnId,
-      };
-    } catch (error: any) {
-      console.error(
-        '⚠️ Error fetching from Monday:',
-        error.response?.data || error.message,
-      );
-      return { exists: false, item: null, boardId: null, statusColumnId: null };
     }
+
+    if (dto.branchId) {
+      branch = await this.branchRepository.findOne({
+        where: { id: dto.branchId },
+      });
+      if (!branch) {
+        throw new NotFoundException('Sede no encontrada');
+      }
+    } else if (assignedTo?.branch) {
+      branch = assignedTo.branch;
+    }
+
+    const lead = this.leadRepository.create({
+      name: dto.name,
+      phone: dto.phone,
+      email: dto.email,
+      nameCourse: dto.nameCourse,
+      categoryCourse: dto.categoryCourse,
+      notes: dto.notes,
+      source: LeadSource.MANUAL,
+      status: LeadStatus.NUEVO,
+      branch,
+      assignedTo,
+      assignedAt: assignedTo ? new Date() : undefined,
+    });
+
+    return this.leadRepository.save(lead);
+  }
+
+  // Listado de leads con filtros y scoping por rol
+  async findAll(filter: FilterLeadDto, user: AuthenticatedUser) {
+    const {
+      page = 1,
+      limit = 10,
+      search,
+      status,
+      branchId,
+      assignedToId,
+      source,
+      unassigned,
+    } = filter;
+
+    const queryBuilder = this.leadRepository
+      .createQueryBuilder('lead')
+      .leftJoinAndSelect('lead.branch', 'branch')
+      .leftJoinAndSelect('lead.assignedTo', 'assignedTo')
+      .leftJoinAndSelect('lead.convertedAlumn', 'convertedAlumn');
+
+    if (user.role === UserRoles.COMMERCIAL) {
+      // Un comercial solo ve los leads que tiene asignados
+      queryBuilder.andWhere('lead.assigned_to_id = :userId', {
+        userId: user.id,
+      });
+    } else {
+      if (assignedToId) {
+        queryBuilder.andWhere('lead.assigned_to_id = :assignedToId', {
+          assignedToId,
+        });
+      }
+      if (unassigned) {
+        queryBuilder.andWhere('lead.assigned_to_id IS NULL');
+      }
+      if (branchId) {
+        queryBuilder.andWhere('lead.branch_id = :branchId', { branchId });
+      }
+    }
+
+    if (search) {
+      queryBuilder.andWhere(
+        '(lead.name ILIKE :search OR lead.phone ILIKE :search OR lead.email ILIKE :search)',
+        { search: `%${search}%` },
+      );
+    }
+
+    if (status) {
+      queryBuilder.andWhere('lead.status = :status', { status });
+    }
+
+    if (source) {
+      queryBuilder.andWhere('lead.source = :source', { source });
+    }
+
+    queryBuilder.orderBy('lead.createdAt', 'DESC');
+
+    const [result, total] = await queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      count: total,
+      page,
+      limit,
+      data: result,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  // Estadísticas del pipeline para el dashboard CRM (mismo scoping por rol que findAll)
+  async getStats(filter: StatsLeadDto, user: AuthenticatedUser) {
+    const queryBuilder = this.leadRepository
+      .createQueryBuilder('lead')
+      .select(['lead.id', 'lead.status', 'lead.source', 'lead.createdAt']);
+
+    if (user.role === UserRoles.COMMERCIAL) {
+      queryBuilder.andWhere('lead.assigned_to_id = :userId', {
+        userId: user.id,
+      });
+    } else {
+      if (filter.assignedToId) {
+        queryBuilder.andWhere('lead.assigned_to_id = :assignedToId', {
+          assignedToId: filter.assignedToId,
+        });
+      }
+      if (filter.branchId) {
+        queryBuilder.andWhere('lead.branch_id = :branchId', {
+          branchId: filter.branchId,
+        });
+      }
+    }
+
+    const leads = await queryBuilder.getMany();
+
+    const byStatus = Object.values(LeadStatus).reduce(
+      (acc, status) => ({ ...acc, [status]: 0 }),
+      {} as Record<LeadStatus, number>,
+    );
+    const bySource = Object.values(LeadSource).reduce(
+      (acc, source) => ({ ...acc, [source]: 0 }),
+      {} as Record<LeadSource, number>,
+    );
+
+    const now = new Date();
+    let newThisMonth = 0;
+
+    for (const lead of leads) {
+      byStatus[lead.status]++;
+      bySource[lead.source]++;
+      if (
+        lead.createdAt.getMonth() === now.getMonth() &&
+        lead.createdAt.getFullYear() === now.getFullYear()
+      ) {
+        newThisMonth++;
+      }
+    }
+
+    const total = leads.length;
+    const conversionRate =
+      total > 0 ? (byStatus[LeadStatus.MATRICULADO] / total) * 100 : 0;
+
+    return { total, byStatus, bySource, conversionRate, newThisMonth };
+  }
+
+  async findOne(id: string) {
+    const lead = await this.leadRepository.findOne({ where: { id } });
+    if (!lead) {
+      throw new NotFoundException(`Lead con ID ${id} no encontrado`);
+    }
+    return lead;
+  }
+
+  async update(id: string, dto: UpdateLeadDto) {
+    const lead = await this.findOne(id);
+
+    if (dto.branchId !== undefined) {
+      const branch = await this.branchRepository.findOne({
+        where: { id: dto.branchId },
+      });
+      if (!branch) {
+        throw new NotFoundException('Sede no encontrada');
+      }
+      lead.branch = branch;
+    }
+
+    const { branchId, ...rest } = dto;
+    Object.assign(lead, rest);
+
+    return this.leadRepository.save(lead);
+  }
+
+  // Asigna un lead a un comercial (ADMIN / COMMERCIAL_PLUS)
+  async assign(id: string, dto: AssignLeadDto) {
+    const lead = await this.findOne(id);
+
+    const assignedTo = await this.userRepository.findOne({
+      where: { id: dto.assignedToId },
+    });
+    if (!assignedTo) {
+      throw new NotFoundException('Comercial no encontrado');
+    }
+
+    lead.assignedTo = assignedTo;
+    lead.assignedAt = new Date();
+
+    if (!lead.branch && assignedTo.branch) {
+      lead.branch = assignedTo.branch;
+    }
+
+    return this.leadRepository.save(lead);
+  }
+
+  // Cambia el estado del lead en el pipeline
+  async changeStatus(id: string, dto: ChangeLeadStatusDto) {
+    const lead = await this.findOne(id);
+
+    if (dto.status === LeadStatus.DESCARTADO && !dto.discardReason) {
+      throw new BadRequestException(
+        'Debes indicar un motivo de descarte para pasar el lead a Descartado',
+      );
+    }
+
+    if (
+      dto.status === LeadStatus.CONTACTADO &&
+      !lead.contactedAt &&
+      lead.status !== LeadStatus.CONTACTADO
+    ) {
+      lead.contactedAt = new Date();
+    }
+
+    lead.status = dto.status;
+
+    if (dto.status === LeadStatus.DESCARTADO) {
+      lead.discardReason = dto.discardReason;
+      lead.discardReasonOther = dto.discardReasonOther;
+    } else {
+      lead.discardReason = null;
+      lead.discardReasonOther = null;
+    }
+
+    return this.leadRepository.save(lead);
+  }
+
+  // Convierte un lead en Alumno (ADMIN / COMMERCIAL_PLUS / COMMERCIAL)
+  async convert(id: string, dto: ConvertLeadDto) {
+    const lead = await this.findOne(id);
+
+    let alumn: Alumn;
+    try {
+      alumn = await this.alumnService.create(dto);
+    } catch (error) {
+      if (error instanceof ConflictException) {
+        // Ya existe un alumno con ese documento: lo reutilizamos en vez de bloquear la conversión
+        alumn = await this.alumnRepository.findOne({
+          where: { documentNumber: dto.documentNumber },
+        });
+        if (!alumn) {
+          throw error;
+        }
+      } else {
+        throw error;
+      }
+    }
+
+    lead.convertedAlumn = alumn;
+    lead.status = LeadStatus.MATRICULADO;
+    await this.leadRepository.save(lead);
+
+    return { lead, alumn };
   }
 }
