@@ -331,10 +331,11 @@ export class ContractsService {
   async findByAlumnId(alumnId: string) {
     return this.contractRepository
       .createQueryBuilder('contract')
+      .leftJoinAndSelect('contract.alumn', 'alumn')
       .leftJoinAndSelect('contract.course', 'course')
       .leftJoinAndSelect('contract.user', 'user')
       .leftJoinAndSelect('contract.branch', 'branch')
-      .where('contract.alumnId = :alumnId', { alumnId })
+      .where('alumn.id = :alumnId', { alumnId })
       .orderBy('contract.createdAt', 'DESC')
       .getMany();
   }
