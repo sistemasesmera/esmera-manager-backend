@@ -36,6 +36,14 @@ export class AlumnController {
     return this.alumnService.create(createAlumnDto, user);
   }
 
+  // Find a Alumn by UUID
+  @Get('/by-id/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS, UserRoles.COMMERCIAL)
+  findById(@Param('id') id: string) {
+    return this.alumnService.findById(id);
+  }
+
   // Find a Alumn by document number(DNI, NIE, PASSPORT)
   @Get('/:documentNumber')
   @UseGuards(JwtAuthGuard, RolesGuard)

@@ -15,6 +15,7 @@ import { WebhookModule } from './modules/webhook/webhook.module';
 import { LeadsModule } from './modules/leads/leads.module';
 import { BranchModule } from './modules/branch/branch.module';
 import { AuditLogModule } from './modules/audit-log/audit-log.module';
+import { SearchModule } from './modules/search/search.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { OnlineSaleCourseModule } from './modules/online-sale-course/online-sale-course.module';
 
@@ -41,6 +42,7 @@ import { OnlineSaleCourseModule } from './modules/online-sale-course/online-sale
     PaymentsModule,
     OnlineSaleCourseModule,
     AuditLogModule,
+    SearchModule,
   ],
   controllers: [],
   providers: [],

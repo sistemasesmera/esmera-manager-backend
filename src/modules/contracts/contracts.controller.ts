@@ -5,6 +5,7 @@ import {
   UseGuards,
   Get,
   Query,
+  Param,
   ValidationPipe,
   BadRequestException,
 } from '@nestjs/common';
@@ -51,6 +52,13 @@ export class ContractsController {
   ) {
     const { page, limit, ...filters } = paginationDto;
     return this.contractsService.findAllByUserId(user.id, page, limit, filters);
+  }
+
+  @Get('by-alumn/:alumnId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS, UserRoles.COMMERCIAL)
+  getByAlumn(@Param('alumnId') alumnId: string) {
+    return this.contractsService.findByAlumnId(alumnId);
   }
 
   @Get('reports')

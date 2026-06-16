@@ -328,6 +328,17 @@ export class ContractsService {
     };
   }
 
+  async findByAlumnId(alumnId: string) {
+    return this.contractRepository
+      .createQueryBuilder('contract')
+      .leftJoinAndSelect('contract.course', 'course')
+      .leftJoinAndSelect('contract.user', 'user')
+      .leftJoinAndSelect('contract.branch', 'branch')
+      .where('contract.alumnId = :alumnId', { alumnId })
+      .orderBy('contract.createdAt', 'DESC')
+      .getMany();
+  }
+
   async getAllContracts(page = 1, limit = 10, q?: string) {
     const take = Math.max(1, limit);
     const skip = Math.max(0, (Math.max(1, page) - 1) * take);
