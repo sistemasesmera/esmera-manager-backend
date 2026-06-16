@@ -400,6 +400,29 @@ export class LeadsService {
     return lead;
   }
 
+  // Leads con nextContactDate <= hoy (pendientes de contactar), scoped por rol
+  async getUpcomingContacts(user: AuthenticatedUser) {
+    const today = new Date();
+    today.setHours(23, 59, 59, 999);
+
+    const qb = this.leadRepository
+      .createQueryBuilder('lead')
+      .leftJoinAndSelect('lead.assignedTo', 'assignedTo')
+      .leftJoinAndSelect('lead.branch', 'branch')
+      .where('lead.nextContactDate IS NOT NULL')
+      .andWhere('lead.nextContactDate <= :today', { today })
+      .andWhere('lead.status NOT IN (:...done)', {
+        done: [LeadStatus.MATRICULADO, LeadStatus.DESCARTADO],
+      })
+      .orderBy('lead.nextContactDate', 'ASC');
+
+    if (user.role === UserRoles.COMMERCIAL) {
+      qb.andWhere('lead.assigned_to_id = :userId', { userId: user.id });
+    }
+
+    return qb.getMany();
+  }
+
   async update(id: string, dto: UpdateLeadDto, user: AuthenticatedUser) {
     const lead = await this.findOne(id);
 

@@ -75,6 +75,13 @@ export class LeadsController {
     return this.leadsService.getStats(filter, user);
   }
 
+  @Get('upcoming-contacts')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS, UserRoles.COMMERCIAL)
+  getUpcomingContacts(@UserData() user: AuthenticatedUser) {
+    return this.leadsService.getUpcomingContacts(user);
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS, UserRoles.COMMERCIAL)

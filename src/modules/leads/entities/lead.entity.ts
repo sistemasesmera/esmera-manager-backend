@@ -65,6 +65,9 @@ export class Lead {
   notes?: string;
 
   @Column({ type: 'timestamp', nullable: true })
+  nextContactDate?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
   contactedAt?: Date;
 
   @Column({ type: 'timestamp', nullable: true })

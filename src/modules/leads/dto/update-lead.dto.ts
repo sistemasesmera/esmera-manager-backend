@@ -5,6 +5,7 @@ import {
   Matches,
   IsEnum,
   IsUUID,
+  IsDateString,
 } from 'class-validator';
 import { LeadCourseCategory } from '../entities/lead-enums';
 
@@ -39,4 +40,8 @@ export class UpdateLeadDto {
   @IsOptional()
   @IsUUID()
   branchId?: string;
+
+  @IsOptional()
+  @IsDateString()
+  nextContactDate?: string;
 }
