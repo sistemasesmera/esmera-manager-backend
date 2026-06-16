@@ -14,6 +14,11 @@ export class DashboardController {
   getDashboardData() {
     return this.dashboardService.getDashboardData();
   }
+  @Get('home-stats')
+  homeStats() {
+    return this.dashboardService.homeStats();
+  }
+
   @Get('/nicolas')
   getDataDashboard() {
     return this.dashboardService.getDataDashboard();

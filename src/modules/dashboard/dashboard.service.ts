@@ -1,4 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { ContractsService } from '../contracts/contracts.service';
 import * as fs from 'fs';
@@ -6,6 +8,9 @@ import * as path from 'path';
 import { UpdateCommonGoalDto } from './dto/update-common.goal.dto';
 import { GoalsService } from '../goals/goals.service';
 import { OnlineSaleCourseService } from '../online-sale-course/online-sale-course.service';
+import { Lead } from '../leads/entities/lead.entity';
+import { LeadStatus } from '../leads/entities/lead-enums';
+import { Alumn } from '../alumn/entities/alumn.entity';
 
 @Injectable()
 export class DashboardService {
@@ -22,6 +27,8 @@ export class DashboardService {
     private readonly contractsService: ContractsService,
     private readonly goalsService: GoalsService,
     private readonly onlineSaleCourseService: OnlineSaleCourseService,
+    @InjectRepository(Lead) private readonly leadRepo: Repository<Lead>,
+    @InjectRepository(Alumn) private readonly alumnRepo: Repository<Alumn>,
   ) {}
 
   // Leer el archivo JSON y devolver el objetivo común
@@ -577,6 +584,37 @@ export class DashboardService {
       },
       holidays: monthGoalsData.holidays,
       days_in_month: monthGoalsData.days_in_month,
+    };
+  }
+
+  async homeStats() {
+    const now = new Date();
+
+    const [totalAlumns, activeLeads, monthContracts] = await Promise.all([
+      this.alumnRepo.count(),
+      this.leadRepo
+        .createQueryBuilder('lead')
+        .where('lead.status NOT IN (:...done)', {
+          done: [LeadStatus.MATRICULADO, LeadStatus.DESCARTADO],
+        })
+        .getCount(),
+      this.contractsService.getContractsForCurrentMonth(),
+    ]);
+
+    const monthAmount = monthContracts.reduce(
+      (sum, c) => sum + (c.coursePrice ?? 0),
+      0,
+    );
+
+    return {
+      totalAlumns,
+      activeLeads,
+      monthContracts: monthContracts.length,
+      monthAmount,
+      periodLabel: now.toLocaleDateString('es-ES', {
+        month: 'long',
+        year: 'numeric',
+      }),
     };
   }
 
