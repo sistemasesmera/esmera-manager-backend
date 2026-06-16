@@ -21,6 +21,8 @@ import { FilterAlumnDto } from './dto/filter-alumn.dto';
 import { UpdateAlumnDto } from './dto/update-alumn.dto';
 import { SendVerificationCodeDto } from './dto/send-verification-code.dto';
 import { VerifyCode } from './dto/verify-code.dto';
+import { UserData } from 'src/decorators/user.decorator';
+import { AuthenticatedUser } from 'src/interfaces/authenticated-user.interface';
 
 @Controller('alumns')
 export class AlumnController {
@@ -30,8 +32,8 @@ export class AlumnController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS, UserRoles.COMMERCIAL)
-  create(@Body() createAlumnDto: CreateAlumnDto) {
-    return this.alumnService.create(createAlumnDto);
+  create(@Body() createAlumnDto: CreateAlumnDto, @UserData() user: AuthenticatedUser) {
+    return this.alumnService.create(createAlumnDto, user);
   }
 
   // Find a Alumn by document number(DNI, NIE, PASSPORT)
@@ -52,17 +54,20 @@ export class AlumnController {
 
   // PUT /alumns/:id -> Para actualizar un alumno
   @Put(':id')
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS, UserRoles.COMMERCIAL)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS, UserRoles.COMMERCIAL)
   async updateAlumn(
     @Param('id') id: string,
     @Body() updateAlumnDto: UpdateAlumnDto,
+    @UserData() user: AuthenticatedUser,
   ) {
-    return this.alumnService.update(id, updateAlumnDto);
+    return this.alumnService.update(id, updateAlumnDto, user);
   }
 
   // PATCH /alumns/:id -> Para actualizar un alumno de forma partial
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS, UserRoles.COMMERCIAL)
   async patchAlumn(
     @Param('id') id: string,
     @Body() partialUpdateDto: Partial<UpdateAlumnDto>,

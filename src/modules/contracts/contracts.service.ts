@@ -9,6 +9,7 @@ import { Course } from '../courses/entities/course.entity';
 import { AuthenticatedUser } from 'src/interfaces/authenticated-user.interface';
 import { v4 as uuidv4 } from 'uuid';
 import { ReportFiltersDto } from './dto/report-filters.dto';
+import { AuditLogService } from '../audit-log/audit-log.service';
 
 @Injectable()
 export class ContractsService {
@@ -21,6 +22,7 @@ export class ContractsService {
     private alumnRepository: Repository<Alumn>,
     @InjectRepository(Course) // Repositorio para la entidad Course
     private courseRepository: Repository<Course>,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   async create(createContractDto: CreateContractDto, user: AuthenticatedUser) {
@@ -106,6 +108,20 @@ export class ContractsService {
 
     // Guardar el contrato en la base de datos
     await this.contractRepository.save(contract);
+
+    void this.auditLogService.log({
+      userId: user.id,
+      userEmail: user.email,
+      action: 'CONTRATO_CREADO',
+      entityType: 'Contract',
+      entityId: contract.id,
+      details: {
+        alumnId: alumn.id,
+        alumnName: `${alumn.firstName} ${alumn.lastName}`,
+        courseId: course.id,
+        courseName: course.name,
+      },
+    });
 
     return contract; // Devolver el contrato creado
   }

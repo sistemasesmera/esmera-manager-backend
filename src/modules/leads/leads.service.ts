@@ -25,12 +25,14 @@ import { Alumn } from '../alumn/entities/alumn.entity';
 import { AlumnService } from '../alumn/alumn.service';
 import { UserRoles } from 'src/constants/Roles.enum';
 import { AuthenticatedUser } from 'src/interfaces/authenticated-user.interface';
+import { AuditLogService } from '../audit-log/audit-log.service';
 
 @Injectable()
 export class LeadsService {
   constructor(
     private readonly emailService: EmailService,
     private readonly alumnService: AlumnService,
+    private readonly auditLogService: AuditLogService,
     @InjectRepository(Lead)
     private readonly leadRepository: Repository<Lead>,
     @InjectRepository(Branch)
@@ -252,7 +254,18 @@ export class LeadsService {
       assignedAt: assignedTo ? new Date() : undefined,
     });
 
-    return this.leadRepository.save(lead);
+    const savedLead = await this.leadRepository.save(lead);
+
+    void this.auditLogService.log({
+      userId: user.id,
+      userEmail: user.email,
+      action: 'LEAD_CREADO',
+      entityType: 'Lead',
+      entityId: savedLead.id,
+      details: { name: savedLead.name, phone: savedLead.phone, source: savedLead.source },
+    });
+
+    return savedLead;
   }
 
   // Listado de leads con filtros y scoping por rol
@@ -387,7 +400,7 @@ export class LeadsService {
     return lead;
   }
 
-  async update(id: string, dto: UpdateLeadDto) {
+  async update(id: string, dto: UpdateLeadDto, user: AuthenticatedUser) {
     const lead = await this.findOne(id);
 
     if (dto.branchId !== undefined) {
@@ -403,11 +416,22 @@ export class LeadsService {
     const { branchId, ...rest } = dto;
     Object.assign(lead, rest);
 
-    return this.leadRepository.save(lead);
+    const saved = await this.leadRepository.save(lead);
+
+    void this.auditLogService.log({
+      userId: user.id,
+      userEmail: user.email,
+      action: 'LEAD_NOTAS_ACTUALIZADAS',
+      entityType: 'Lead',
+      entityId: lead.id,
+      details: { leadName: lead.name },
+    });
+
+    return saved;
   }
 
   // Asigna un lead a un comercial (ADMIN / COMMERCIAL_PLUS)
-  async assign(id: string, dto: AssignLeadDto) {
+  async assign(id: string, dto: AssignLeadDto, user: AuthenticatedUser) {
     const lead = await this.findOne(id);
 
     const assignedTo = await this.userRepository.findOne({
@@ -424,12 +448,28 @@ export class LeadsService {
       lead.branch = assignedTo.branch;
     }
 
-    return this.leadRepository.save(lead);
+    const saved = await this.leadRepository.save(lead);
+
+    void this.auditLogService.log({
+      userId: user.id,
+      userEmail: user.email,
+      action: 'LEAD_ASIGNADO',
+      entityType: 'Lead',
+      entityId: lead.id,
+      details: {
+        leadName: lead.name,
+        assignedToId: dto.assignedToId,
+        assignedToEmail: assignedTo.email,
+      },
+    });
+
+    return saved;
   }
 
   // Cambia el estado del lead en el pipeline
-  async changeStatus(id: string, dto: ChangeLeadStatusDto) {
+  async changeStatus(id: string, dto: ChangeLeadStatusDto, user: AuthenticatedUser) {
     const lead = await this.findOne(id);
+    const fromStatus = lead.status;
 
     if (dto.status === LeadStatus.DESCARTADO && !dto.discardReason) {
       throw new BadRequestException(
@@ -455,11 +495,22 @@ export class LeadsService {
       lead.discardReasonOther = null;
     }
 
-    return this.leadRepository.save(lead);
+    const saved = await this.leadRepository.save(lead);
+
+    void this.auditLogService.log({
+      userId: user.id,
+      userEmail: user.email,
+      action: 'LEAD_ESTADO_CAMBIADO',
+      entityType: 'Lead',
+      entityId: lead.id,
+      details: { leadName: lead.name, fromStatus, toStatus: dto.status },
+    });
+
+    return saved;
   }
 
   // Convierte un lead en Alumno (ADMIN / COMMERCIAL_PLUS / COMMERCIAL)
-  async convert(id: string, dto: ConvertLeadDto) {
+  async convert(id: string, dto: ConvertLeadDto, user: AuthenticatedUser) {
     const lead = await this.findOne(id);
 
     let alumn: Alumn;
@@ -482,6 +533,15 @@ export class LeadsService {
     lead.convertedAlumn = alumn;
     lead.status = LeadStatus.MATRICULADO;
     await this.leadRepository.save(lead);
+
+    void this.auditLogService.log({
+      userId: user.id,
+      userEmail: user.email,
+      action: 'LEAD_CONVERTIDO_A_ALUMNO',
+      entityType: 'Lead',
+      entityId: lead.id,
+      details: { leadName: lead.name, alumnId: alumn.id },
+    });
 
     return { lead, alumn };
   }

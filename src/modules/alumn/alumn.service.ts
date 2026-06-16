@@ -13,6 +13,8 @@ import { FilterAlumnDto } from './dto/filter-alumn.dto';
 import { UpdateAlumnDto } from './dto/update-alumn.dto';
 import { EmailService } from '../email/email.service';
 import { ConfigService } from '@nestjs/config';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import { AuthenticatedUser } from 'src/interfaces/authenticated-user.interface';
 
 @Injectable()
 export class AlumnService {
@@ -21,10 +23,11 @@ export class AlumnService {
     private readonly alumnRepository: Repository<Alumn>,
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   // Create a new Alumn
-  async create(createAlumnDto: CreateAlumnDto): Promise<Alumn> {
+  async create(createAlumnDto: CreateAlumnDto, user?: AuthenticatedUser): Promise<Alumn> {
     // Verificar si el alumno ya existe
     const existingAlumn = await this.alumnRepository.findOne({
       where: { documentNumber: createAlumnDto.documentNumber },
@@ -41,7 +44,20 @@ export class AlumnService {
     const newAlumn = this.alumnRepository.create({
       ...createAlumnDto,
     });
-    return await this.alumnRepository.save(newAlumn);
+    const saved = await this.alumnRepository.save(newAlumn);
+
+    if (user) {
+      void this.auditLogService.log({
+        userId: user.id,
+        userEmail: user.email,
+        action: 'ALUMNO_CREADO',
+        entityType: 'Alumn',
+        entityId: saved.id,
+        details: { firstName: saved.firstName, lastName: saved.lastName, email: saved.email },
+      });
+    }
+
+    return saved;
   }
 
   async findById(id: string) {
@@ -113,7 +129,7 @@ export class AlumnService {
     };
   }
 
-  async update(id: string, updateAlumnDto: UpdateAlumnDto) {
+  async update(id: string, updateAlumnDto: UpdateAlumnDto, user?: AuthenticatedUser) {
     const alumn = await this.alumnRepository.findOne({ where: { id } });
     if (!alumn) {
       throw new NotFoundException(`Alumno con ID ${id} no encontrado`);
@@ -144,6 +160,17 @@ export class AlumnService {
     };
 
     await this.alumnRepository.save(updatedAlumn);
+
+    if (user) {
+      void this.auditLogService.log({
+        userId: user.id,
+        userEmail: user.email,
+        action: 'ALUMNO_ACTUALIZADO',
+        entityType: 'Alumn',
+        entityId: id,
+        details: { firstName: updatedAlumn.firstName, lastName: updatedAlumn.lastName },
+      });
+    }
 
     return updatedAlumn; // Retornar el alumno actualizado
   }

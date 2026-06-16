@@ -14,6 +14,8 @@ import { Contract } from '../contracts/entities/contract.entity';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { formatText } from 'src/utils/string-utils';
 import { Branch } from '../branch/entities/branch.entity';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import { AuthenticatedUser } from 'src/interfaces/authenticated-user.interface';
 
 @Injectable()
 export class UsersService {
@@ -24,6 +26,7 @@ export class UsersService {
     private contractRepository: Repository<Contract>,
     @InjectRepository(Branch)
     private branchRepository: Repository<Branch>,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   // Busca a un Usuario por Email (Se utiliza en el jwtStrategy)
@@ -34,7 +37,7 @@ export class UsersService {
   }
 
   //Crear un comercial
-  async createCommercial(createCommercialDto: CreateCommercialDto) {
+  async createCommercial(createCommercialDto: CreateCommercialDto, actor?: AuthenticatedUser) {
     const { firstName, lastName, email, password, role, branchId, username } =
       createCommercialDto;
 
@@ -75,6 +78,17 @@ export class UsersService {
     });
 
     await this.usersRepository.save(newUser);
+
+    if (actor) {
+      void this.auditLogService.log({
+        userId: actor.id,
+        userEmail: actor.email,
+        action: 'COMERCIAL_CREADO',
+        entityType: 'User',
+        entityId: newUser.id,
+        details: { email: normalizedEmail, role },
+      });
+    }
 
     delete newUser.password; // No devolver la contraseña
     return newUser;
@@ -203,7 +217,7 @@ export class UsersService {
     return users;
   }
 
-  async updatePartial(id: string, partialUpdateDto: UpdateUserDto) {
+  async updatePartial(id: string, partialUpdateDto: UpdateUserDto, actor?: AuthenticatedUser) {
     const commercial = await this.usersRepository.findOne({
       where: { id },
       relations: ['branch'],
@@ -241,7 +255,20 @@ export class UsersService {
     // Merge del resto de campos (firstName, lastName, email, role)
     Object.assign(commercial, partialUpdateDto);
 
-    return this.usersRepository.save(commercial);
+    const saved = await this.usersRepository.save(commercial);
+
+    if (actor) {
+      void this.auditLogService.log({
+        userId: actor.id,
+        userEmail: actor.email,
+        action: 'COMERCIAL_ACTUALIZADO',
+        entityType: 'User',
+        entityId: id,
+        details: { email: saved.email },
+      });
+    }
+
+    return saved;
   }
 
   async changeCommercialPassword(

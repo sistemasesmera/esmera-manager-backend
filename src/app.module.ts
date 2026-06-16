@@ -14,6 +14,7 @@ import { CouponsModule } from './modules/coupons/coupons.module';
 import { WebhookModule } from './modules/webhook/webhook.module';
 import { LeadsModule } from './modules/leads/leads.module';
 import { BranchModule } from './modules/branch/branch.module';
+import { AuditLogModule } from './modules/audit-log/audit-log.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { OnlineSaleCourseModule } from './modules/online-sale-course/online-sale-course.module';
 
@@ -39,6 +40,7 @@ import { OnlineSaleCourseModule } from './modules/online-sale-course/online-sale
     BranchModule,
     PaymentsModule,
     OnlineSaleCourseModule,
+    AuditLogModule,
   ],
   controllers: [],
   providers: [],

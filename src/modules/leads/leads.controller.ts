@@ -26,6 +26,7 @@ import { UserRoles } from 'src/constants/Roles.enum';
 import { UserData } from 'src/decorators/user.decorator';
 import { AuthenticatedUser } from 'src/interfaces/authenticated-user.interface';
 
+
 @Controller('leads')
 export class LeadsController {
   constructor(private readonly leadsService: LeadsService) {}
@@ -84,28 +85,44 @@ export class LeadsController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS, UserRoles.COMMERCIAL)
-  update(@Param('id') id: string, @Body() dto: UpdateLeadDto) {
-    return this.leadsService.update(id, dto);
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateLeadDto,
+    @UserData() user: AuthenticatedUser,
+  ) {
+    return this.leadsService.update(id, dto, user);
   }
 
   @Patch(':id/assign')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS)
-  assign(@Param('id') id: string, @Body() dto: AssignLeadDto) {
-    return this.leadsService.assign(id, dto);
+  assign(
+    @Param('id') id: string,
+    @Body() dto: AssignLeadDto,
+    @UserData() user: AuthenticatedUser,
+  ) {
+    return this.leadsService.assign(id, dto, user);
   }
 
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS, UserRoles.COMMERCIAL)
-  changeStatus(@Param('id') id: string, @Body() dto: ChangeLeadStatusDto) {
-    return this.leadsService.changeStatus(id, dto);
+  changeStatus(
+    @Param('id') id: string,
+    @Body() dto: ChangeLeadStatusDto,
+    @UserData() user: AuthenticatedUser,
+  ) {
+    return this.leadsService.changeStatus(id, dto, user);
   }
 
   @Post(':id/convert')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS, UserRoles.COMMERCIAL)
-  convert(@Param('id') id: string, @Body() dto: ConvertLeadDto) {
-    return this.leadsService.convert(id, dto);
+  convert(
+    @Param('id') id: string,
+    @Body() dto: ConvertLeadDto,
+    @UserData() user: AuthenticatedUser,
+  ) {
+    return this.leadsService.convert(id, dto, user);
   }
 }

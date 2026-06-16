@@ -8,12 +8,14 @@ import { Branch } from '../branch/entities/branch.entity';
 import { User } from '../users/entities/user.entity';
 import { Alumn } from '../alumn/entities/alumn.entity';
 import { AlumnModule } from '../alumn/alumn.module';
+import { AuditLogModule } from '../audit-log/audit-log.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Lead, Branch, User, Alumn]),
     EmailModule,
     AlumnModule,
+    AuditLogModule,
   ],
   controllers: [LeadsController],
   providers: [LeadsService],

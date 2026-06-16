@@ -34,8 +34,9 @@ export class UsersController {
   @Roles(UserRoles.ADMIN, UserRoles.COMMERCIAL_PLUS)
   async createCommercial(
     @Body(new ValidationPipe()) createCommercialDto: CreateCommercialDto,
+    @UserData() user: AuthenticatedUser,
   ): Promise<User> {
-    return this.usersService.createCommercial(createCommercialDto);
+    return this.usersService.createCommercial(createCommercialDto, user);
   }
 
   //Endpoint para traer los comerciales
@@ -60,8 +61,9 @@ export class UsersController {
   async patchUser(
     @Param('id') id: string,
     @Body() partialUpdateDto: Partial<UpdateUserDto>,
+    @UserData() user: AuthenticatedUser,
   ) {
-    return this.usersService.updatePartial(id, partialUpdateDto);
+    return this.usersService.updatePartial(id, partialUpdateDto, user);
   }
 
   //Endpoint para activar/desactivar un comercial (solo podra hacerlo comercial y admin)
